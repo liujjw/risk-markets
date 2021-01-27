@@ -1,0 +1,28 @@
+{
+  "name": "risk-markets",
+  "version": "1.0.0",
+  "description": "Node project for risk markets protocol.",
+  "main": "index.js",
+  "dependencies": {
+    "ethereum-waffle": "^3.2.2",
+    "ethers": "^5.0.26"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "mocha": "^8.2.1"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "waffle"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/liujjw/risk-markets.git"
+  },
+  "author": "Jackie Liu",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/liujjw/risk-markets/issues"
+  },
+  "homepage": "https://github.com/liujjw/risk-markets#readme"
+}

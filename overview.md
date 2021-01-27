@@ -15,7 +15,7 @@ If a seller borrows from a long risk pool, a loss is recorded if the asset price
 For example, in a bull market, lenders will buy risk from long risk sellers to gain passive market exposure as these long risk sellers use the protocol to hedge a highly leveraged position. In a bear market, lenders share the upside of shorting, and the downside of going long. Nonetheless, buyers and sellers alike must consistently make informed decisions about market conditions to avoid low/negative yields and large losses. Moreover, the protocol is not very efficient for smaller, short term positions.
 
 # Implementation
-Rates are set algorithmically based on supply and demand, and maintain protocol solvency.  
+Rates are set algorithmically based on supply and demand, and to maintain protocol solvency.  
 
 ## Parameters
 ### `supplyPoolCoverProportion` 
@@ -25,7 +25,7 @@ determines what fraction of the current asset supply pool value can be taken to 
 parameters for the curve that determines what fraction of every USD simple profit goes toward increasing the borrower's debt obligation above its initial value to go back to the supply pool
 
 ## Profit sharing rates in the event of a simple profit
-We assume that a borrower makes a simple profit from their position, which we define as the positive difference between the value of a position at some higher price and the value of the position at some lower price. To put it more succinctly, 
+We assume that a borrower makes a simple profit from their position, which we define as the positive difference between the value of a position at some higher price and the value of the position at some lower price, i.e.,
 
     simpleProfit = positionSize * (newPrice / oldPrice)
 
@@ -55,5 +55,6 @@ The protocol is built using Aave's liquidity markets and as such subject to all 
 Market manipulation by "whales" 
 
 Borrowers who deposit into long but borrow from short
-  
+
+Pooling leverage for less fees feature
 

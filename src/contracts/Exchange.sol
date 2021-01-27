@@ -1,8 +1,9 @@
-pragma solidity 0.6.12;
+pragma solidity >=0.6.12;
 
-import 'ILendingPool.sol';
+import "ILendingPool.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-contract AaveSushi {
+contract Exchange {
     // user needs to call corresponding erc20's approve for kovan lending pool 
     address kovanLendingPool = 0x9FE532197ad76c5a68961439604C037EB79681F0;
     mapping(address => uint256) unscaledBalancesLong;
