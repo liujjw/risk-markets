@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Wasabi app</title>
+        <link rel="stylesheet" href="styles.css">
+    </head>
+    <body>
+        <div class="app">
+            <div class="title">Wasabi</div>
+            <div class="connect-metamask"><button>Connect Metamask</button></div>
+            <div class="long">
+                <h3>Long</h3>
+                <ul>
+                    <li>Supply APY: </li>
+                    <li>Borrow APR: </li>
+                    <li>Cover rate: </li>
+                    <li>Liquidity: </li>
+                    <li>Collateralization: </li>
+                </ul>
+            </div>
+            <div class="short">
+                <h3>Short</h3>
+                <ul>
+                    <li>Supply APY: </li>
+                    <li>Borrow APR: </li>
+                    <li>Cover rate: </li>
+                    <li>Liquidity: </li>
+                    <li>Collateralization: </li>
+                </ul>
+            </div>
+            <div class="open-position">
+                <form action="">
+                    <label for="position">Position: </label>
+                    <div id="position">
+                        <label for="borrow">Long</label>
+                        <input type="radio" id="long" value="long" name="position">
+                        <label for="supply">Short</label>
+                        <input type="radio" id="short" value="short" name="position">
+                    </div>
+                    <label for="action">Action: </label>
+                    <div id="action">
+                        <label for="borrow">Borrow</label>
+                        <input type="radio" id="borrow" value="borrow" name="action">
+                        <label for="supply">Supply</label>
+                        <input type="radio" id="supply" value="supply" name="action">
+                    </div>
+                    <label for="amount">Amount: </label>
+                    <input type="text" name="amount" id="amount">
+                    <input type="submit" value="Send">
+                </form>
+            </div>
+        </div>
+    </body>
+
+</html>

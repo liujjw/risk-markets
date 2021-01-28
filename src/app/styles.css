@@ -1,0 +1,47 @@
+.title {
+    font-family: MV Boli;
+    font-size: 60px;
+    margin: auto;
+    width: 10%
+}
+
+.long {
+    border: 3px solid grey; 
+    padding: 5px;
+    margin: auto;
+    width: 25%;
+    height: 170px;
+    margin-top: 35px;
+    text-align: center;
+}
+
+.short {
+    border: 3px solid grey;
+    padding: 5px;
+    margin: auto;
+    width: 25%;
+    height: 170px;
+    text-align: center;
+}
+
+.connect-metamask {
+    margin: 0;
+    position: absolute;
+    left: 47%;
+}
+
+.open-position {
+    border: 3px solid grey;
+    padding: 5px;
+    margin: auto;
+    width: 25%;
+    height: 115px;
+    text-align: center;
+}
+
+body {
+    background-color: rgb(196, 230, 191);
+    font-family: Arial;
+    color: grey;
+}
+
