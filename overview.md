@@ -14,7 +14,7 @@ If a seller borrows from a long risk pool, a loss is recorded if the asset price
 ## Uses
 For example, in a bull market, lenders will buy risk from long risk sellers to gain passive market exposure as these long risk sellers use the protocol to hedge a highly leveraged position. In a bear market, lenders share the upside of shorting, and the downside of going long. Nonetheless, buyers and sellers alike must consistently make informed decisions about market conditions to avoid low/negative yields and large losses. The protocol is not very efficient for smaller, short term positions.
 
-# Implementation
+# Rates
 Rates are set algorithmically based on supply and demand. The total profit sharing can exceed the the total loss coverage, as in this scenario both parties "win" despite borrowers losing more profits. At any given point there is a historical or current ratio of profit sharing value to loss coverage value, `profitShareToCoverRatio`, which defaults to one in the beginning. Once there is enough data on this, we can caluclate this ratio based on a defined epoch, perhaps in sync with the yield calculations.
 
 A fraction of every USD simple profit goes toward increasing the borrower's debt obligation above its initial value to go back to the supply pool. We assume that a borrower makes a simple profit from their position, which we define as the positive difference between the value of a position at some higher price and the value of the position at some lower price, i.e.,
@@ -32,22 +32,22 @@ Cover rate `c` is the solution of the constant product equation:
 
 Loans can only be borrowed up to the underlying assets LTV ratio, and rates get worse as utilization approaches the LTV ratio. In this system, all outstanding loans can be completely repaid at a loss at once, but rates for borrowers are not ideal in this risk-averse scheme. Available coverage is guaranteed to never exceed a predictable amount, allowing for the most pessimistic lower bound on total yields. In a scenario of sustained losses wherein loss coverage exceeds profit sharing, yield for lenders would decrease to the point where there is a loss of liquidty for borrowers, giving an indicator of market conditions.
 
-From the cover rate `c` and a default `profitShareToCoverRatio` of 1, we set the profit share rate `p`
+From the cover rate `c`, we set the profit share rate `p`
 
-    p = min(c + profitShareConstant, maxProfitShareRate)
+    factor = 1 / profitShareToCoverRatio
+    p = min((factor * c) + profitShareConstant, maxProfitShareRate)
 
 When the ratio dips below 1, we need higher profit sharing rates to keep yields for suppliers profitable. When the ratio rises above 1, we can lower profit sharing rates.
 
 ## Yield calculations
-<!-- Need to make this an APY, ie account for compounding -->
-An APY is important for lenders to compare yields across protocols. For borrowers, the cover rate, profit sharing rate, and the interest rate are sufficient for making decisions. There is only one asset to start with, ETH, to keep things simple. Possible USDC support for example would be allowing lending and borrowing but long/short would not make sense; for DAI, arbitrage. With stablecoin supply pools, users would be able to make loans directly into stablecoins without having to incur the cost of swapping. In a multi-asset system with other volatile assets (not stablecoins), losses and gains would be split appropriately by dollar value supplied in long and short categories. ETH is available for lending/borrowing and long/short. Thus, the current APY for ETH lenders for example is calculated as follows
+An APY is important for lenders to compare yields across protocols. For borrowers, the cover rate, profit sharing rate, and the interest rate are sufficient for making decisions. There is only one asset to start with, ETH, to keep things simple. Possible USDC support for example would be allowing lending and borrowing but long/short would not make sense; for DAI, arbitrage. With stablecoin supply pools, users would be able to make loans directly into stablecoins without having to incur the cost of swapping. In a multi-asset system with other volatile assets (not stablecoins), losses and gains would be split appropriately by dollar value supplied in long and short categories. ETH is available for lending/borrowing and long/short. The current APY for ETH lenders is calculated as follows
 
     ETH_APY = AAVE_ETH_APY + AnnualizedProfitRate - AnnualizedLossRate 
-    AnnualizedProfitRate = DollarsSharedOverLastEpoch * AnnualizationFactor
-    AnnualizedLossRate = DollarsPaidOutOverLastEpoch * AnnualizationFactor
+    AnnualizedProfitRate = (DollarsSharedOverLastEpoch / supplyPoolValue) * AnnualizationFactor
+    AnnualizedLossRate = (DollarsPaidOutOverLastEpoch /supplyPoolValue) * AnnualizationFactor
     1 Epoch = 512 blocks
 
-The APY in this case is floating. 512 blocks is over an hour based on current block times, so there is a lag in actual current APY rates, which is not ideal in case of market flash crashes. This parameter should be tweaked based on protocol activity. An `x` epoch average, e.g. a 30-epoch average, should also be available.    
+The `AnnualizationFactor` annualizes the rate with the effect of compounding. The APY in this case is floating. 512 blocks is over an hour based on current block times, so there is a lag in actual current APY rates, which is not ideal in case of market flash crashes. This parameter should be tweaked based on protocol activity. An `x` epoch average, e.g. a 30-epoch average, should also be available.    
 
 ## Additional considerations
 The protocol is built using Aave's liquidity markets and as such subject to all its risks and rewards, such as liquidations, yields, and governance changes. The usage of the protocol is virtually identical to using Aave or other money market liquidity protocols, except for the additional volatility of exchanging risk of course. 
