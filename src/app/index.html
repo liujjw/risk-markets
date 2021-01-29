@@ -12,38 +12,67 @@
             <div class="long">
                 <h3>Long</h3>
                 <ul>
-                    <li>Supply APY: </li>
-                    <li>Borrow APR: </li>
-                    <li>Cover rate: </li>
-                    <li>Liquidity: </li>
-                    <li>Collateralization: </li>
+                    <li>Supply APY: loading </li>
+                    <li>Borrow APR: loading </li>
+                    <li>Cover rate: loading </li>
+                    <li>Profit-sharing rate: loading </li>
+                    <li>Liquidity: loading </li>
+                    <li>Collateralization: loading </li>
                 </ul>
+                <script type="module">
+                    // import ethers from "ethers";
+                    if (typeof window.ethereum !== 'undefined') {
+                        console.log('MetaMask is installed!');
+                    }
+                </script>
             </div>
             <div class="short">
                 <h3>Short</h3>
                 <ul>
-                    <li>Supply APY: </li>
-                    <li>Borrow APR: </li>
-                    <li>Cover rate: </li>
-                    <li>Liquidity: </li>
-                    <li>Collateralization: </li>
+                    <li>Supply APY: loading </li>
+                    <li>Borrow APR: loading </li>
+                    <li>Cover rate: loading </li>
+                    <li>Profit-sharing rate: loading </li>
+                    <li>Liquidity: loading </li>
+                    <li>Collateralization: loading </li>
                 </ul>
             </div>
             <div class="open-position">
-                <form action="">
+                <form action=""> 
                     <label for="position">Position: </label>
                     <div id="position">
-                        <label for="borrow">Long</label>
-                        <input type="radio" id="long" value="long" name="position">
-                        <label for="supply">Short</label>
-                        <input type="radio" id="short" value="short" name="position">
+                        <label for="long">Long</label>
+                        <input type="radio" id="long" value="long" name="position-op">
+                        <label for="short">Short</label>
+                        <input type="radio" id="short" value="short" name="position-op">
                     </div>
                     <label for="action">Action: </label>
                     <div id="action">
                         <label for="borrow">Borrow</label>
-                        <input type="radio" id="borrow" value="borrow" name="action">
+                        <input type="radio" id="borrow" value="borrow" name="action-op">
                         <label for="supply">Supply</label>
-                        <input type="radio" id="supply" value="supply" name="action">
+                        <input type="radio" id="supply" value="supply" name="action-op">
+                    </div>
+                    <label for="amount">Amount: </label>
+                    <input type="text" name="amount" id="amount">
+                    <input type="submit" value="Send">
+                </form>
+            </div>
+            <div class="close-position">
+                <form action="">
+                    <label for="position">Position: </label>
+                    <div id="position">
+                        <label for="long">Long</label>
+                        <input type="radio" id="long" value="long" name="position-cp">
+                        <label for="short">Short</label>
+                        <input type="radio" id="short" value="short" name="position-cp">
+                    </div>
+                    <label for="action">Action: </label>
+                    <div id="action">
+                        <label for="pay back">Pay back</label>
+                        <input type="radio" id="pay back" value="pay back" name="action-cp">
+                        <label for="withdraw">Withdraw</label>
+                        <input type="radio" id="withdraw" value="withdraw" name="action-cp">
                     </div>
                     <label for="amount">Amount: </label>
                     <input type="text" name="amount" id="amount">

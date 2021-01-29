@@ -10,7 +10,7 @@
     padding: 5px;
     margin: auto;
     width: 25%;
-    height: 170px;
+    height: 180px;
     margin-top: 35px;
     text-align: center;
 }
@@ -20,7 +20,7 @@
     padding: 5px;
     margin: auto;
     width: 25%;
-    height: 170px;
+    height: 180px;
     text-align: center;
 }
 
@@ -31,6 +31,15 @@
 }
 
 .open-position {
+    border: 3px solid grey;
+    padding: 5px;
+    margin: auto;
+    width: 25%;
+    height: 115px;
+    text-align: center;
+}
+
+.close-position {
     border: 3px solid grey;
     padding: 5px;
     margin: auto;

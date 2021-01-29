@@ -1,14 +1,15 @@
 {
   "name": "risk-markets",
   "version": "1.0.0",
-  "description": "Node project for risk markets protocol.",
+  "description": "Risk markets protocol.",
   "main": "index.js",
-  "dependencies": {
-    "ethereum-waffle": "^3.2.2",
-    "ethers": "^5.0.26"
-  },
+  "dependencies": {},
   "devDependencies": {
+    "@openzeppelin/contracts": "^3.3.0",
     "chai": "^4.2.0",
+    "ethereum-waffle": "^3.2.2",
+    "ethers": "^5.0.26",
+    "hardhat": "^2.0.8",
     "mocha": "^8.2.1"
   },
   "scripts": {
