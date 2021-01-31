@@ -1,5 +1,5 @@
 /**
-    Scrap code, possibly used for a pooled leverage feature in the future. Contains a lot of cut+paste code from Compound protocol docs.
+    Pooled leverage feature in the future. Cut+paste from Compound protocol docs.
 */
 contract PooledLeverage {
     mapping(uint256 => LongPosition) positions;

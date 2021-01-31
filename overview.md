@@ -14,7 +14,8 @@ If a seller borrows from a long risk pool, a loss is recorded if the asset price
 ## Uses
 For example, in a bull market, lenders will buy risk from long risk sellers to gain passive market exposure as these long risk sellers use the protocol to hedge a highly leveraged position. In a bear market, lenders share the upside of shorting, and the downside of going long. Nonetheless, buyers and sellers alike must consistently make informed decisions about market conditions to avoid low/negative yields and large losses. The protocol is not very efficient for smaller, short term positions.
 
-# Rates
+# Design 
+## Rates
 Rates are set algorithmically based on supply and demand. The total profit sharing can exceed the the total loss coverage, as in this scenario both parties "win" despite borrowers losing more profits. At any given point there is a historical or current ratio of profit sharing value to loss coverage value, `profitShareToCoverRatio`, which defaults to one in the beginning. Once there is enough data on this, we can caluclate this ratio based on a defined epoch, perhaps in sync with the yield calculations.
 
 A fraction of every USD simple profit goes toward increasing the borrower's debt obligation above its initial value to go back to the supply pool. We assume that a borrower makes a simple profit from their position, which we define as the positive difference between the value of a position at some higher price and the value of the position at some lower price, i.e.,
@@ -38,6 +39,13 @@ From the cover rate `c`, we set the profit share rate `p`
     p = min((factor * c) + profitShareConstant, maxProfitShareRate)
 
 When the ratio dips below 1, we need higher profit sharing rates to keep yields for suppliers profitable. When the ratio rises above 1, we can lower profit sharing rates.
+
+## Proportional ownership
+Each of the protocol long and short pools for a particular asset are implemented as a single large Aave position. For example, all long Eth deposits are pooled together into one Aave deposit into Eth, i.e. the protocol owns all aTokens. Every user that makes a deposit owns a fraction of the total deposit pool with interest equal to the fraction of the total principal without interest their deposit was. When withdrawing, the amount requested to be withdrawn is 
+
+    amount = (x / totalPrincipal) * poolBalance
+
+where we can solve for `x`.
 
 ## Yield calculations
 An APY is important for lenders to compare yields across protocols. For borrowers, the cover rate, profit sharing rate, and the interest rate are sufficient for making decisions. There is only one asset to start with, ETH, to keep things simple. Possible USDC support for example would be allowing lending and borrowing but long/short would not make sense; for DAI, arbitrage. With stablecoin supply pools, users would be able to make loans directly into stablecoins without having to incur the cost of swapping. In a multi-asset system with other volatile assets (not stablecoins), losses and gains would be split appropriately by dollar value supplied in long and short categories. ETH is available for lending/borrowing and long/short. The current APY for ETH lenders is calculated as follows
