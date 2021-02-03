@@ -16,7 +16,7 @@ For example, in a bull market, lenders will buy risk from long risk sellers to g
 
 # Design 
 ## Rates
-Rates are set algorithmically based on supply and demand. The total profit sharing can exceed the the total loss coverage, as in this scenario both parties "win" despite borrowers losing more profits. At any given point there is a historical or current ratio of profit sharing value to loss coverage value, `profitShareToCoverRatio`, which defaults to one in the beginning. Once there is enough data on this, we can caluclate this ratio based on a defined epoch, perhaps in sync with the yield calculations.
+Rates are set algorithmically based on supply and demand. The total profit sharing can exceed the the total loss coverage, as in this scenario both parties "win" despite borrowers losing more profits. At any given point there is a historical or current ratio of profit sharing value to loss coverage value, `profitShareToCoverRatio`, which defaults to one in the beginning. Once there is enough data on this, we can caluclate this ratio based on a floating number of past closes, perhaps in sync with the yield calculations.
 
 A fraction of every USD simple profit goes toward increasing the borrower's debt obligation above its initial value to go back to the supply pool. We assume that a borrower makes a simple profit from their position, which we define as the positive difference between the value of a position at some higher price and the value of the position at some lower price, i.e.,
 
@@ -47,8 +47,20 @@ Each of the protocol long and short pools for a particular asset are implemented
 
 where we can solve for `x`.
 
+## Representing WETH price
+We can get USDC/ETH price in wei units from Aave price oracles. We need to convert this into a format that is amenable to calculating simple profit/loss. To keep things simple for now, we calculate ETH/USDC price as follows
+    
+    1 usdc / x wei
+    x wei * k = 1 weth = 1000000000000000000 wei 
+    (1 usdc / x wei) * (k / k) = k usdc / x * k wei = k usdc / 1 weth
+
+Decimals are not accounted for. A fraction system could be implemented to account for cents, or calculations could be done in wei.
+
+## Pools
+There is only one pair for now, ETH/USDC, with ETH being the asset that is held as collateral for a long/short position. The protocol will need its own liquidation process or some similar penalty (something else entirely, credit delegation or change onBehalfOf to user) for LTV ratios that become too high. The USDC comes from Aave's USDC pool, so proper liquidation/penalties will be essential to prevent the protocol's entire position being liquidated.
+
 ## Yield calculations
-An APY is important for lenders to compare yields across protocols. For borrowers, the cover rate, profit sharing rate, and the interest rate are sufficient for making decisions. There is only one asset to start with, ETH, to keep things simple. Possible USDC support for example would be allowing lending and borrowing but long/short would not make sense; for DAI, arbitrage. With stablecoin supply pools, users would be able to make loans directly into stablecoins without having to incur the cost of swapping. In a multi-asset system with other volatile assets (not stablecoins), losses and gains would be split appropriately by dollar value supplied in long and short categories. ETH is available for lending/borrowing and long/short. The current APY for ETH lenders is calculated as follows
+An APY is important for lenders to compare yields across protocols. For borrowers, the cover rate, profit sharing rate, and the interest rate are sufficient for making decisions. Possible USDC support for example would be allowing lending and borrowing but long/short would not make sense; for DAI, arbitrage. With stablecoin supply pools, users would be able to make loans directly into stablecoins without having to incur the cost of swapping. In a multi-asset system with other volatile assets (not stablecoins), losses and gains would be split appropriately by dollar value supplied in long and short categories. ETH is available for lending/borrowing and long/short. The current APY for ETH lenders is calculated as follows
 
     ETH_APY = AAVE_ETH_APY + AnnualizedProfitRate - AnnualizedLossRate 
     AnnualizedProfitRate = (DollarsSharedOverLastEpoch / supplyPoolValue) * AnnualizationFactor

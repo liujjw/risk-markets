@@ -76,4 +76,18 @@ describe('Exchange', () => {
         // console.log((await exchange.signer.getBalance()).toString());
         // console.log((await exchange2.signer.getBalance()).toString());
     })
+
+    it("Correctly borrows", async () => {
+        const factory = await ethers.getContractFactory("Exchange");
+        const exchange = await factory.deploy();
+        let overrides = {
+            value: ethers.utils.parseEther("1000") 
+        };
+
+        await exchange.depositLongEth(overrides);
+        await exchange.borrow_USDC_Long_Eth(ethers.utils.parseUnits("100000", 6));
+        var borrowedBalance = ethers.utils.formatUnits(await exchange.USDC_Balance(), 6);
+        expect(borrowedBalance).to.equal("100000.0");
+    })
 });
+// gas cost? disable? compute?

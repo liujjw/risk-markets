@@ -7,6 +7,7 @@
 
 .long {
     border: 3px solid grey; 
+    /* border: 3px solid black; */
     padding: 5px;
     margin: auto;
     width: 25%;
@@ -17,6 +18,7 @@
 
 .short {
     border: 3px solid grey;
+    /* border: 3px solid black; */
     padding: 5px;
     margin: auto;
     width: 25%;
@@ -32,6 +34,7 @@
 
 .open-position {
     border: 3px solid grey;
+    /* border: 3px solid black; */
     padding: 5px;
     margin: auto;
     width: 25%;
@@ -41,6 +44,7 @@
 
 .close-position {
     border: 3px solid grey;
+    /* border: 3px solid black; */
     padding: 5px;
     margin: auto;
     width: 25%;
@@ -50,6 +54,7 @@
 
 body {
     background-color: rgb(196, 230, 191);
+    /* background-color: white; */
     font-family: Arial;
     color: grey;
 }
