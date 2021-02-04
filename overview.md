@@ -16,11 +16,13 @@ For example, in a bull market, lenders will buy risk from long risk sellers to g
 
 # Design 
 ## Rates
-Rates are set algorithmically based on supply and demand. The total profit sharing can exceed the the total loss coverage, as in this scenario both parties "win" despite borrowers losing more profits. At any given point there is a historical or current ratio of profit sharing value to loss coverage value, `profitShareToCoverRatio`, which defaults to one in the beginning. Once there is enough data on this, we can caluclate this ratio based on a floating number of past closes, perhaps in sync with the yield calculations.
+Rates are set algorithmically based on supply and demand. The total profit sharing can exceed the the total loss coverage, as in this scenario both parties "win" despite borrowers losing more profits. At any given point there is a historical or current protocol-wide ratio of profit sharing value to loss coverage value, `profitShareToCoverRatio`, which defaults to one in the beginning. Once there is enough data on this, we can caluclate this ratio based on a floating number of past closes, perhaps in sync with the yield calculations.
 
 A fraction of every USD simple profit goes toward increasing the borrower's debt obligation above its initial value to go back to the supply pool. We assume that a borrower makes a simple profit from their position, which we define as the positive difference between the value of a position at some higher price and the value of the position at some lower price, i.e.,
 
-    simpleProfit = positionSize * (newPrice / oldPrice)
+    simpleProfit = (amountDepositedInEth * priceAtClose) - (amountDepositedInEth * priceAtBorrow)
+
+Users must borrow to be able to receive protocol hedging, otherwise they are just passive depositers. 
 
 The parameter `supplyPoolCoverProportion` determines what fraction of the current asset supply pool value can be taken to cover losses in the corresponding risk pool (and suppliers' deposit each decrease slightly to cover it); each asset has its own rate. The protocol should never get insolvent and liquidated (this would be catastrophic); one way this is prevented is by having a good constant for fixed percentage payout at any given point in such a way that the LTV from loans still outstanding does not rise above the liquidation threshhold. A requirement that is "good enough" is to never pay out to the risk pool more than is paid back in to close a position, i.e. the LTV ratio when a position is closed out never increases. This requirement imposes a cap on how much total value is covered in a loss; this requirement could be loosened in the future with more analysis. 
 
@@ -45,16 +47,7 @@ Each of the protocol long and short pools for a particular asset are implemented
 
     amount = (x / totalPrincipal) * poolBalance
 
-where we can solve for `x`.
-
-## Representing WETH price
-We can get USDC/ETH price in wei units from Aave price oracles. We need to convert this into a format that is amenable to calculating simple profit/loss. To keep things simple for now, we calculate ETH/USDC price as follows
-    
-    1 usdc / x wei
-    x wei * k = 1 weth = 1000000000000000000 wei 
-    (1 usdc / x wei) * (k / k) = k usdc / x * k wei = k usdc / 1 weth
-
-Decimals are not accounted for. A fraction system could be implemented to account for cents, or calculations could be done in wei.
+where we can solve for `x`. 
 
 ## Pools
 There is only one pair for now, ETH/USDC, with ETH being the asset that is held as collateral for a long/short position. The protocol will need its own liquidation process or some similar penalty (something else entirely, credit delegation or change onBehalfOf to user) for LTV ratios that become too high. The USDC comes from Aave's USDC pool, so proper liquidation/penalties will be essential to prevent the protocol's entire position being liquidated.
@@ -69,7 +62,24 @@ An APY is important for lenders to compare yields across protocols. For borrower
 
 The `AnnualizationFactor` annualizes the rate with the effect of compounding. The APY in this case is floating. 512 blocks is over an hour based on current block times, so there is a lag in actual current APY rates, which is not ideal in case of market flash crashes. This parameter should be tweaked based on protocol activity. An `x` epoch average, e.g. a 30-epoch average, should also be available.    
 
-## Additional considerations
+# Protocol math
+Solidity does not provide good suport for decimals, but they are crucial for accurate financial accounting. A simple approach would be to use a fraction struct to deal with decimals, with division avoided as long as possible. However, this is not full featured enough for lots of arithmetic. 
+
+## Libraries
+We use Compound's `Exponential` library for a somewhat familiar approach to dealing with decimals.
+
+## Representing WETH price
+We can get USDC/Wei from Aave price oracles. We calculate ETH/USDC price as follows
+    
+    1 usdc / x wei
+    x wei * k = 1 weth = 1000000000000000000 wei 
+    (1 usdc / x wei) * (k / k) = k usdc / x * k wei = k usdc / 1 weth
+
+Reverse the calculation to solve for `x` given `k` (`x wei * k  = 10^18 wei`). Decimals can be accounted for with the appropriate abstractions and libraries. This approach is the more natural way to think about prices (not using Exponential yet, for require() only). 
+
+Alternatively, all calculations are done with wei and the base price format from the price oracle, stored as `price = (1.000000 usdc / x wei)`, so that when `(newPrice * y wei) - (oldPrice * y wei)` gives units in whole `usdc` (using Exponential, need to convert when overriding price, for rates math).
+
+# Additional considerations
 The protocol is built using Aave's liquidity markets and as such subject to all its risks and rewards, such as liquidations, yields, and governance changes. The usage of the protocol is virtually identical to using Aave or other money market liquidity protocols, except for the additional volatility of exchanging risk of course. 
 
 Miscellaneous: market manipulation by "whales", pooling leverage for less fees feature, optimize gas usage, more analysis for better rates eg get rid of fixed
