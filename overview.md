@@ -28,19 +28,44 @@ The parameter `supplyPoolCoverProportion` determines what fraction of the curren
 
 Each fraction of one USD (we denominate all value in USD) in simple loss from risk pools is uniformly covered in the event of a realized loss according to current protocol rates. That is, the debt obligation for borrowers is decreased. The protocol is agnostic to how positions are ultimately managed, e.g. there are no incentives to close a position either early or late. 
 
-Cover rate `c` is the solution of the constant product equation: 
+Cover rate `coverRate` is based on the constant product equation: 
 
-    availableCoverage = supplyPoolCoverProportion * totalSupply * conversionFactorToUSD
-    min(availableCoverage, totalLossInAllOpenPositions) = c * totalLossInAllOpenPositions
+    availableCoverage = supplyPoolCoverProportion * dollarValueOf(totalSupply)
+    min(availableCoverage, totalLossInAllOpenPositions) = r * totalLossInAllOpenPositions
+    coverRate = min(r, maxCoverRate)
+
+`totalLossInAllOpenPositions` is always 0 or greater, so `r` always makes sense except for the edge case when the fraction is 0. This is computed as the value change from the price the borrow was made to when the value is calculated. This value changes constantly, perhaps too much, as the price changes, but it is our way of changing the cover rate based on demand; this method is also very costly in terms of gas usage as it is a heavy computation:
+    
+    current usdcwei price p
+    set s (mapping) containing struct e of wei deposit amounts b, usdcwei price at borrow time c
+    for all e in s (iterate, but can't alter mapping while doing this ):
+        totalLoss = 0
+        if e.c > p:
+            totalLoss += valueOf(e.b, e.c) - valueOf(e.b, p)
+
+possibly simplified as 
+
+    current usdcwei price p
+    set s containing struct e of wei deposit amounts b, usdcwei price at borrow time c
+    integer sum k
+    for all e in s:
+        k += valueOf(e.b, e.c)
+    integer sum j
+    for all e in s:
+        if e.c > p:
+            j += valueOf(e.b, p)
+    totalLoss = k - j
+
+Alternatively, we could represent demand as the value of recent losses in a given period. We make the simplifying assumption that borrow position is greater than total coverage of loss.
 
 Loans can only be borrowed up to the underlying assets LTV ratio, and rates get worse as utilization approaches the LTV ratio. In this system, all outstanding loans can be completely repaid at a loss at once, but rates for borrowers are not ideal in this risk-averse scheme. Available coverage is guaranteed to never exceed a predictable amount, allowing for the most pessimistic lower bound on total yields. In a scenario of sustained losses wherein loss coverage exceeds profit sharing, yield for lenders would decrease to the point where there is a loss of liquidty for borrowers, giving an indicator of market conditions.
 
-From the cover rate `c`, we set the profit share rate `p`
+From the cover rate `coverRate`, we set the profit share rate `profitShareRate`
 
     factor = 1 / profitShareToCoverRatio
-    p = min((factor * c) + profitShareConstant, maxProfitShareRate)
+    profitShareRate = min((factor * coverRate) + profitShareConstant, maxProfitShareRate)
 
-When the ratio dips below 1, we need higher profit sharing rates to keep yields for suppliers profitable. When the ratio rises above 1, we can lower profit sharing rates.
+When the ratio dips below 1, we need higher profit sharing rates to keep yields for suppliers profitable. When the ratio rises above 1, we can lower profit sharing rates. This is done using the `factor`. At 1, the `profitShareRate` is just the `profitShareConstant` added to the `coverRate`.
 
 ## Proportional ownership
 Each of the protocol long and short pools for a particular asset are implemented as a single large Aave position. For example, all long Eth deposits are pooled together into one Aave deposit into Eth, i.e. the protocol owns all aTokens. Every user that makes a deposit owns a fraction of the total deposit pool with interest equal to the fraction of the total principal without interest their deposit was. When withdrawing, the amount requested to be withdrawn is 
@@ -82,5 +107,5 @@ Alternatively, all calculations are done with wei and the base price format from
 # Additional considerations
 The protocol is built using Aave's liquidity markets and as such subject to all its risks and rewards, such as liquidations, yields, and governance changes. The usage of the protocol is virtually identical to using Aave or other money market liquidity protocols, except for the additional volatility of exchanging risk of course. 
 
-Miscellaneous: market manipulation by "whales", pooling leverage for less fees feature, optimize gas usage, more analysis for better rates eg get rid of fixed
+Miscellaneous: market manipulation by "whales", pooling leverage for less fees feature, optimize gas usage, more analysis for better rates eg get rid of fixed, change terminology from lending/borrowing to true "risk market", liquidations/penalty
 

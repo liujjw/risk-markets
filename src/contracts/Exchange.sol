@@ -35,6 +35,11 @@ contract Exchange {
         uint256 denom;
     }
 
+    itmap openPositions;    
+    using IterableMapping for itmap;
+    uint256 keyCounter = 1;
+    mapping(address => uint256) keys;
+
     mapping(address => DepositPosition) unscaledDepositsLong; 
     uint256 principalTotalBalanceWei;
     mapping(address => BorrowPosition) unscaledBorrowsLong; 
@@ -46,6 +51,9 @@ contract Exchange {
     Fraction profitShareToCover;
     Fraction currentProfitShareToCover;
     Fraction supplyPoolCoverProportion;
+    Fraction maxProfitShareRate;
+    Fraction profitShareConstant;
+    Fraction maxCoverRate;
 
     WETHGateway weth;
     Erc20 aweth;
@@ -73,6 +81,9 @@ contract Exchange {
         profitShareToCover = Fraction({num: 1, denom: 1});
         currentProfitShareToCover = Fraction({num: 0, denom: 0});
         supplyPoolCoverProportion = Fraction({num: 1, denom: 10});
+        maxProfitShareRate = Fraction({num: 5, denom: 10});
+        profitShareConstant = Fraction({num: 1, denom: 10});
+        maxCoverRate = Fraction({num: 8, denom: 10});
     }
 
     /**
@@ -155,6 +166,13 @@ contract Exchange {
         unscaledBorrowsLong[msg.sender].amountBaseUnits += amount;
         unscaledBorrowsLong[msg.sender].priceInWei = poracle.getAssetPrice(mainnetUSDC);
 
+        A memory a = A({
+            depositAmount: unscaledDepositsLong[msg.sender].amountBaseUnits, usdcweiPrice: unscaledBorrowsLong[msg.sender].priceInWei
+        });
+        openPositions.insert(keyCounter, a);
+        keys[msg.sender] = keyCounter;
+        keyCounter += 1;
+
         lp.borrow(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48, amount, 2, 0, address(this));
         usdc.transfer(msg.sender, amount);
     }
@@ -162,7 +180,7 @@ contract Exchange {
     /**
     @dev returns usdc balance of sender
     **/
-    function USDC_Balance() public view returns(uint256) {
+    function senderUSDCBalance() public view returns(uint256) {
         return usdc.balanceOf(msg.sender);
     }
 
@@ -171,8 +189,8 @@ contract Exchange {
     @param amount amount to repay
     @param all 1 for repay all, ignoring amount
     **/
-    // TODO need to ACUTALLY repay the usdc
-    function repay_USDC_Long_Eth(uint256 amount, uint256 all) payable public {
+    // TODO need to ACUTALLY repay the usdc and release borrowers collateral
+    function repay_USDC_Long_Eth(uint256 amount, uint256 all) public {
         if (all == 1) {
             // currentPastClosesCount += 1;
             unscaledBorrowsLong[msg.sender].amountBaseUnits = 0;
@@ -186,18 +204,51 @@ contract Exchange {
             bool profit = false;
             uint256 a = valueOf(1, unscaledDepositsLong[msg.sender].amountBaseUnits, poracle.getAssetPrice(mainnetUSDC));
             uint256 b = valueOf(1, unscaledDepositsLong[msg.sender].amountBaseUnits, overwrittenPrice);
-            uint256 c;
+            uint256 simpleDelta;
             if (a > b) {
-                c = a - b;
+                simpleDelta = a - b;
             } else if (a < b) {
-                c = b - a;
+                simpleDelta = b - a;
                 profit = true;
             } else {
                 console.log("unimplemented");
-                c = 0;
+                simpleDelta = 0;
             }
+            // console.log(simpleDelta);
 
-            (uint256 c_num, uint256 c_denom) = getC();
+            uint256 availableCoverage = supplyPoolCoverProportion.num * valueOf(1, queryTokenBalance(), currentPrice) / supplyPoolCoverProportion.denom;
+            // console.log(availableCoverage);
+
+            uint256 totalLossInAllOpenPositions = 0;
+            for (
+                uint i = openPositions.iterate_start();
+                openPositions.iterate_valid(i);
+                i = openPositions.iterate_next(i)
+            ) {
+                (, A memory value) = openPositions.iterate_get(i);
+                // reversed from natural way
+                if (value.usdcweiPrice < currentPrice) {
+                    uint256 m = valueOf(1, value.depositAmount, value.usdcweiPrice);
+                    uint256 n = valueOf(1, value.depositAmount, currentPrice);
+                    totalLossInAllOpenPositions += m - n;
+                }
+            }
+            console.log(totalLossInAllOpenPositions);
+
+            Fraction memory coverRate = Fraction({num: availableCoverage, denom: totalLossInAllOpenPositions});
+            if (totalLossInAllOpenPositions < availableCoverage) {
+                coverRate.num = totalLossInAllOpenPositions;
+            }
+            (uint256 p, uint256 q) = fracMin(coverRate.num, coverRate.denom, maxCoverRate.num, maxCoverRate.denom);
+            coverRate.num = p;
+            coverRate.denom = q;
+            console.log(coverRate.num, coverRate.denom);
+
+            Fraction memory factor = Fraction({num: profitShareToCover.denom, denom: profitShareToCover.num});
+            Fraction memory reg = Fraction({num: factor.num * coverRate.num + profitShareConstant.num, denom: factor.denom * coverRate.denom + profitShareConstant.denom});
+            (uint256 x, uint256 y) = fracMin(reg.num, reg.denom, maxProfitShareRate.num, maxProfitShareRate.denom);
+            Fraction memory profitShareRate = Fraction({num: x, denom: y});
+
             
             // if (profit) {
             //     currentProfitShareToCover.num += profitShareAmnt;
@@ -210,17 +261,25 @@ contract Exchange {
             //     // denom could be 0
             //     ratio = Exponential.Exp();
             // }
+            openPositions.remove(keys[msg.sender]);
+            keys[msg.sender] = 0;
         } else {
             console.log("unimplemented");
         }
     }
 
     /**
-    @dev returns cover rate
+    @dev returns minimum of a Fraction
      */
-    function getC() internal view returns(uint256, uint256) {
-        uint256 availableCoverage = supplyPoolCoverProportion.num * queryTokenBalance() 
-    } 
+    function fracMin(uint256 a_num, uint256 a_denom, uint256 b_num, uint256 b_denom) internal pure returns(uint256, uint256) {
+        uint256 a_num_prime = a_num * b_denom;
+        uint256 b_num_prime = b_num * a_denom;
+        if (a_num_prime < b_num_prime) {
+            return (a_num, a_denom);
+        } else {
+            return (b_num, b_denom);
+        }
+    }
 
     /**
     @dev sets price of usdc for testing, disable for live
@@ -235,7 +294,7 @@ contract Exchange {
     @param asset the type of asset, 1 for eth, 2 for usdc
     @param amount of the asset in base units 
     **/
-    function valueOf(uint256 asset, uint256 amount, uint256 price) private view returns(uint256) {
+    function valueOf(uint256 asset, uint256 amount, uint256 price) internal pure returns(uint256) {
         if (asset == 1) {
             // (amount / 1000000000000000000) * (1000000000000000000 / a)
             return amount / price;
@@ -279,4 +338,68 @@ interface PriceOracle {
 
 interface LPAddressesProvider {
     function getPriceOracle() external returns (address);
+}
+
+struct A {
+    uint256 depositAmount;
+    uint256 usdcweiPrice;
+}
+// Solidity docs
+struct IndexValue { uint keyIndex; A value; }
+struct KeyFlag { uint key; bool deleted; }
+
+struct itmap {
+    mapping(uint => IndexValue) data;
+    KeyFlag[] keys;
+    uint size;
+}
+
+library IterableMapping {
+    function insert(itmap storage self, uint key, A memory value) internal returns (bool replaced) {
+        uint keyIndex = self.data[key].keyIndex;
+        self.data[key].value = value;
+        if (keyIndex > 0)
+            return true;
+        else {
+            keyIndex = self.keys.length;
+            self.keys.push();
+            self.data[key].keyIndex = keyIndex + 1;
+            self.keys[keyIndex].key = key;
+            self.size++;
+            return false;
+        }
+    }
+
+    function remove(itmap storage self, uint key) internal returns (bool success) {
+        uint keyIndex = self.data[key].keyIndex;
+        if (keyIndex == 0)
+            return false;
+        delete self.data[key];
+        self.keys[keyIndex - 1].deleted = true;
+        self.size --;
+    }
+
+    function contains(itmap storage self, uint key) internal view returns (bool) {
+        return self.data[key].keyIndex > 0;
+    }
+
+    function iterate_start(itmap storage self) internal view returns (uint keyIndex) {
+        return iterate_next(self, uint(-1));
+    }
+
+    function iterate_valid(itmap storage self, uint keyIndex) internal view returns (bool) {
+        return keyIndex < self.keys.length;
+    }
+
+    function iterate_next(itmap storage self, uint keyIndex) internal view returns (uint r_keyIndex) {
+        keyIndex++;
+        while (keyIndex < self.keys.length && self.keys[keyIndex].deleted)
+            keyIndex++;
+        return keyIndex;
+    }
+
+    function iterate_get(itmap storage self, uint keyIndex) internal view returns (uint key, A memory value) {
+        key = self.keys[keyIndex].key;
+        value = self.data[key].value;
+    }
 }

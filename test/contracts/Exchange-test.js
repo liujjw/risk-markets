@@ -46,6 +46,7 @@ describe('Exchange', () => {
         // await logAccountBalance(exchange2, "10000");
     })
 
+    // TODO
     xit("Correctly withdraws some proportional ownership.", async () => {
         const factory = await ethers.getContractFactory("Exchange");
         const exchange = await factory.deploy();
@@ -92,7 +93,7 @@ describe('Exchange', () => {
 
         await exchange.depositLongEth(overrides);
         await exchange.borrow_USDC_Long_Eth(ethers.utils.parseUnits("100000", 6));
-        var borrowedBalance = ethers.utils.formatUnits(await exchange.USDC_Balance(), 6);
+        var borrowedBalance = ethers.utils.formatUnits(await exchange.senderUSDCBalance(), 6);
         expect(borrowedBalance).to.equal("100000.0");
     })
 
@@ -110,7 +111,8 @@ describe('Exchange', () => {
         return c.toString();
     }
 
-    xit("Computes correct simple profit", async () => {
+    xit("Computes approximate simple profit", async () => {
+        // enable corrresponding console.log in .sol
         const depositAmountInEth = 100;
         const borrowAmountInUSDC = 10000;
         const newPriceETHUSDC = 2000;
@@ -132,5 +134,38 @@ describe('Exchange', () => {
         await exchange.overridePrice(ethers.BigNumber.from(newPriceUSDCWEI));
         await exchange.repay_USDC_Long_Eth(ethers.utils.parseUnits("0", 6), ethers.BigNumber.from("1"));
         console.log("expecting about", simpleDeltaEstimate);
+    })
+
+    it("Computes reasonable cover rates.", async () => {
+        // collective borrowers, borrow at 1384, 692000 value deposit, 100000 borrow
+        const factory = await ethers.getContractFactory("Exchange");
+        const exchange = await factory.deploy();
+        let overrides = {
+            value: ethers.utils.parseEther("500") 
+        };
+        await exchange.depositLongEth(overrides);
+        await exchange.borrow_USDC_Long_Eth(ethers.utils.parseUnits("100000", 6));
+
+        // represents collective suppliers, no borrows, 1 mil value
+        const user2Signer = new ethers.Wallet
+        ("0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d", exchange.provider);
+        const exchange2 = exchange.connect(user2Signer);
+        let overrides2 = {
+            value: ethers.utils.parseEther("1000") 
+        };
+        await exchange2.depositLongEth(overrides2);
+
+        // price drops, 500000 value deposit 
+        const newPriceUSDCWEI = ETHUSDC_to_USDCWEI("1000");
+        await exchange2.overridePrice(ethers.BigNumber.from(newPriceUSDCWEI));
+
+        // borrower deposit is included in supply pool for coverage 
+        await exchange.repay_USDC_Long_Eth(BigNumber.from("0"), BigNumber.from("1"));
+        // console.log("expecting about 150000 / 192000");
+        
+    })
+
+    it("Computes reasonable profit share rates.", async () => {
+        // compute a variety
     })
 });
