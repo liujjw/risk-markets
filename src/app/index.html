@@ -3,83 +3,144 @@
     <head>
         <meta charset="utf-8">
         <title>Wasabi app</title>
-        <link rel="stylesheet" href="styles.css">
+
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+        <style>
+            .navbar {
+                margin-bottom: 50px;
+                border-radius: 0;
+            }
+            .connect-metamask {
+                margin: 0;
+                position: absolute;
+                left: 47%;
+            }
+        </style>
+
     </head>
     <body>
-        <div class="app">
-            <div class="title">Wasabi</div>
-            <div class="connect-metamask"><button>Connect Metamask</button></div>
-            <div class="long">
-                <h3>Long</h3>
-                <ul>
-                    <li>Supply APY: loading </li>
-                    <li>Borrow APR: loading </li>
-                    <li>Cover rate: loading </li>
-                    <li>Profit-sharing rate: loading </li>
-                    <li>Liquidity: loading </li>
-                    <li>Collateralization: loading </li>
+        <nav class="navbar navbar-inverse">
+            <div class="container-fluid">
+              <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
+                  <span class="icon-bar"></span>
+                  <span class="icon-bar"></span>
+                  <span class="icon-bar"></span>                        
+                </button>
+                <a class="navbar-brand" href="#">Wasabi</a>
+              </div>
+              <div class="collapse navbar-collapse" id="myNavbar">
+                <ul class="nav navbar-nav">
+                  <li class="active"><a href="#">App</a></li>
                 </ul>
-                <script type="module">
-                    // import ethers from "ethers";
-                    if (typeof window.ethereum !== 'undefined') {
-                        console.log('MetaMask is installed!');
-                    }
-                </script>
+              </div>
             </div>
-            <div class="short">
-                <h3>Short</h3>
-                <ul>
-                    <li>Supply APY: loading </li>
-                    <li>Borrow APR: loading </li>
-                    <li>Cover rate: loading </li>
-                    <li>Profit-sharing rate: loading </li>
-                    <li>Liquidity: loading </li>
-                    <li>Collateralization: loading </li>
-                </ul>
+        </nav>
+
+        <div class="connect-metamask"><button>Connect Metamask</button></div>
+        <br><br><br>
+
+        <div class="container">    
+            <div class="col">
+              <div class="col-sm-4">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">Long pool info</div>
+                    <div class="panel-body">
+                        <div class="long">
+                            <ul>
+                                <li>Supply APY: loading </li>
+                                <li>Borrow APR: loading </li>
+                                <li>Cover rate: loading </li>
+                                <li>Profit-sharing rate: loading </li>
+                                <li>Liquidity: loading </li>
+                                <li>Collateralization: loading </li>
+                            </ul>
+                            <script type="module">
+                                // import ethers from "ethers";
+                                if (typeof window.ethereum !== 'undefined') {
+                                    console.log('MetaMask is installed!');
+                                }
+                            </script>
+                        </div>
+                    </div>
+                </div>
+              </div>
+              <div class="col-sm-4"> 
+                <div class="panel panel-primary">
+                    <div class="panel-heading">Short pool info</div>
+                    <div class="panel-body">
+                        <div class="short">
+                            <ul>
+                                <li>Supply APY: loading </li>
+                                <li>Borrow APR: loading </li>
+                                <li>Cover rate: loading </li>
+                                <li>Profit-sharing rate: loading </li>
+                                <li>Liquidity: loading </li>
+                                <li>Collateralization: loading </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+              </div>
+            <div class="col-sm-4"> 
+                <div class="panel panel-primary">
+                    <div class="panel-heading">Open position</div>
+                    <div class="panel-body">
+                        <div class="open-position">
+                            <form action=""> 
+                                <label for="position">Position: </label>
+                                <div id="position">
+                                    <label for="long">Long</label>
+                                    <input type="radio" id="long" value="long" name="position-op">
+                                    <label for="short">Short</label>
+                                    <input type="radio" id="short" value="short" name="position-op">
+                                </div>
+                                <label for="action">Action: </label>
+                                <div id="action">
+                                    <label for="borrow">Borrow</label>
+                                    <input type="radio" id="borrow" value="borrow" name="action-op">
+                                    <label for="supply">Supply</label>
+                                    <input type="radio" id="supply" value="supply" name="action-op">
+                                </div>
+                                <label for="amount">Amount: </label>
+                                <input type="text" name="amount" id="amount">
+                                <input type="submit" value="Send">
+                            </form>
+                        </div>
+                    </div>
+                </div>
+              </div>
             </div>
-            <div class="open-position">
-                <form action=""> 
-                    <label for="position">Position: </label>
-                    <div id="position">
-                        <label for="long">Long</label>
-                        <input type="radio" id="long" value="long" name="position-op">
-                        <label for="short">Short</label>
-                        <input type="radio" id="short" value="short" name="position-op">
+            <div class="col-sm-4"> 
+                <div class="panel panel-primary">
+                    <div class="panel-heading">Close position</div>
+                    <div class="panel-body">
+                        <div class="close-position">
+                            <form action="">
+                                <label for="position">Position: </label>
+                                <div id="position">
+                                    <label for="long">Long</label>
+                                    <input type="radio" id="long" value="long" name="position-cp">
+                                    <label for="short">Short</label>
+                                    <input type="radio" id="short" value="short" name="position-cp">
+                                </div>
+                                <label for="action">Action: </label>
+                                <div id="action">
+                                    <label for="pay back">Pay back</label>
+                                    <input type="radio" id="pay back" value="pay back" name="action-cp">
+                                    <label for="withdraw">Withdraw</label>
+                                    <input type="radio" id="withdraw" value="withdraw" name="action-cp">
+                                    <label for="withdraw-all">Withdraw all</label>
+                                    <input type="radio" id="withdraw-all" value="withdraw-all" name="action-cp">
+                                </div>
+                                <label for="amount">Amount: </label>
+                                <input type="text" name="amount" id="amount">
+                                <input type="submit" value="Send">
+                            </form>
+                        </div>
                     </div>
-                    <label for="action">Action: </label>
-                    <div id="action">
-                        <label for="borrow">Borrow</label>
-                        <input type="radio" id="borrow" value="borrow" name="action-op">
-                        <label for="supply">Supply</label>
-                        <input type="radio" id="supply" value="supply" name="action-op">
-                    </div>
-                    <label for="amount">Amount: </label>
-                    <input type="text" name="amount" id="amount">
-                    <input type="submit" value="Send">
-                </form>
-            </div>
-            <div class="close-position">
-                <form action="">
-                    <label for="position">Position: </label>
-                    <div id="position">
-                        <label for="long">Long</label>
-                        <input type="radio" id="long" value="long" name="position-cp">
-                        <label for="short">Short</label>
-                        <input type="radio" id="short" value="short" name="position-cp">
-                    </div>
-                    <label for="action">Action: </label>
-                    <div id="action">
-                        <label for="pay back">Pay back</label>
-                        <input type="radio" id="pay back" value="pay back" name="action-cp">
-                        <label for="withdraw">Withdraw</label>
-                        <input type="radio" id="withdraw" value="withdraw" name="action-cp">
-                        <label for="withdraw-all">Withdraw all</label>
-                        <input type="radio" id="withdraw-all" value="withdraw-all" name="action-cp">
-                    </div>
-                    <label for="amount">Amount: </label>
-                    <input type="text" name="amount" id="amount">
-                    <input type="submit" value="Send">
-                </form>
+                </div>
+              </div>
             </div>
         </div>
     </body>
