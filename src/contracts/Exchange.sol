@@ -20,13 +20,13 @@ contract Exchange {
 
     // TODO array
     struct BorrowPosition {
-        uint256 amountBaseUnits;
+        uint256 amountBase;
         uint256 priceInWei;
         uint256 asset; 
     }   
 
     struct DepositPosition {
-        uint256 amountBaseUnits;
+        uint256 amountBase;
         uint256 asset;
     }
 
@@ -96,7 +96,7 @@ contract Exchange {
 
         weth.depositETH{value: msg.value}(address(this), 0);
         principalTotalBalanceWei += msg.value;
-        unscaledDepositsLong[msg.sender].amountBaseUnits += msg.value;
+        unscaledDepositsLong[msg.sender].amountBase += msg.value;
         unscaledDepositsLong[msg.sender].asset = 1;
 
         // console.log("aWETH balance after deposit: ", aweth.balanceOf(address(this)));
@@ -119,31 +119,31 @@ contract Exchange {
     function withdrawLongEth(uint256 amount, uint256 all) public {
         // lp.withdraw(asset, amount, msg.sender);
         require(principalTotalBalanceWei > 0, "total principal 0");
-        require(unscaledDepositsLong[msg.sender].amountBaseUnits > 0, "user has no balance");
+        require(unscaledDepositsLong[msg.sender].amountBase > 0, "user has no balance");
 
         uint256 contract_aWETH_Balance = aweth.balanceOf(address(this));
-        uint256 msgSenderTotalDepositOwnership = contract_aWETH_Balance * unscaledDepositsLong[msg.sender].amountBaseUnits / principalTotalBalanceWei;
+        uint256 msgSenderTotalDepositOwnership = contract_aWETH_Balance * unscaledDepositsLong[msg.sender].amountBase / principalTotalBalanceWei;
 
         if (all == 0) {
             require(amount <= msgSenderTotalDepositOwnership, "user does not own amount to withdraw");
             uint256 newTotalDepositOwnership = msgSenderTotalDepositOwnership - amount;
-            require(ltv_out_of_ten * valueOf(1, newTotalDepositOwnership, poracle.getAssetPrice(mainnetUSDC)) / 10 >= valueOf(2, unscaledBorrowsLong[msg.sender].amountBaseUnits, 1), "withdraw would cause borrow to be greater than max borrow");
+            require(ltv_out_of_ten * valueOf(1, newTotalDepositOwnership, poracle.getAssetPrice(mainnetUSDC)) / 10 >= valueOf(2, unscaledBorrowsLong[msg.sender].amountBase, 1), "withdraw would cause borrow to be greater than max borrow");
 
             uint256 x = amount * principalTotalBalanceWei / contract_aWETH_Balance;
 
             aweth.approve(mainnetWETHGateway, amount);
             weth.withdrawETH(amount, msg.sender);
             
-            unscaledDepositsLong[msg.sender].amountBaseUnits -= x;
+            unscaledDepositsLong[msg.sender].amountBase -= x;
             principalTotalBalanceWei -= x;
         } else {
-            require(unscaledBorrowsLong[msg.sender].amountBaseUnits == 0, "can't withdraw everything with outstanding borrow");
+            require(unscaledBorrowsLong[msg.sender].amountBase == 0, "can't withdraw everything with outstanding borrow");
 
             aweth.approve(mainnetWETHGateway, msgSenderTotalDepositOwnership);
             weth.withdrawETH(msgSenderTotalDepositOwnership, msg.sender);
 
-            principalTotalBalanceWei -= unscaledDepositsLong[msg.sender].amountBaseUnits;
-            unscaledDepositsLong[msg.sender].amountBaseUnits = 0;
+            principalTotalBalanceWei -= unscaledDepositsLong[msg.sender].amountBase;
+            unscaledDepositsLong[msg.sender].amountBase = 0;
         }
     }
     
@@ -153,21 +153,21 @@ contract Exchange {
     **/
     function borrow_USDC_Long_Eth(uint256 amount) public {
         require(principalTotalBalanceWei > 0, "total principal 0");
-        require(unscaledDepositsLong[msg.sender].amountBaseUnits > 0, "user has no balance");
-        require(unscaledBorrowsLong[msg.sender].amountBaseUnits == 0, "user can only make one borrow for now");
+        require(unscaledDepositsLong[msg.sender].amountBase > 0, "user has no balance");
+        require(unscaledBorrowsLong[msg.sender].amountBase == 0, "user can only make one borrow for now");
 
         uint256 contract_aWETH_Balance = aweth.balanceOf(address(this));
-        uint256 msgSenderTotalDepositOwnership = contract_aWETH_Balance * unscaledDepositsLong[msg.sender].amountBaseUnits / principalTotalBalanceWei;
+        uint256 msgSenderTotalDepositOwnership = contract_aWETH_Balance * unscaledDepositsLong[msg.sender].amountBase / principalTotalBalanceWei;
 
         // hard coded limit on ltv, poll max ltv from aave TODO
-        require(valueOf(2, amount + unscaledBorrowsLong[msg.sender].amountBaseUnits, 1) <= valueOf(1, msgSenderTotalDepositOwnership, poracle.getAssetPrice(mainnetUSDC)) * ltv_out_of_ten / 10);
+        require(valueOf(2, amount + unscaledBorrowsLong[msg.sender].amountBase, 1) <= valueOf(1, msgSenderTotalDepositOwnership, poracle.getAssetPrice(mainnetUSDC)) * ltv_out_of_ten / 10);
 
         unscaledBorrowsLong[msg.sender].asset = 2;
-        unscaledBorrowsLong[msg.sender].amountBaseUnits += amount;
+        unscaledBorrowsLong[msg.sender].amountBase += amount;
         unscaledBorrowsLong[msg.sender].priceInWei = poracle.getAssetPrice(mainnetUSDC);
 
         A memory a = A({
-            depositAmount: unscaledDepositsLong[msg.sender].amountBaseUnits, usdcweiPrice: unscaledBorrowsLong[msg.sender].priceInWei
+            depositAmount: unscaledDepositsLong[msg.sender].amountBase, usdcweiPrice: unscaledBorrowsLong[msg.sender].priceInWei
         });
         openPositions.insert(keyCounter, a);
         keys[msg.sender] = keyCounter;
@@ -189,12 +189,9 @@ contract Exchange {
     @param amount amount to repay
     @param all 1 for repay all, ignoring amount
     **/
-    // TODO need to ACUTALLY repay the usdc and release borrowers collateral
+    // TODO need to ACUTALLY repay the usdc, and increase or decrease debt obligation accordingly 
     function repay_USDC_Long_Eth(uint256 amount, uint256 all) public {
-        if (all == 1) {
-            // currentPastClosesCount += 1;
-            unscaledBorrowsLong[msg.sender].amountBaseUnits = 0;
-
+        if (all == 1) {            
             uint256 currentPrice = poracle.getAssetPrice(mainnetUSDC);
             if (isPriceOverride) {
                 // console.log("Old price:", 1000000000000000000 / currentPrice, "New price:", 1000000000000000000 / overwrittenPrice);
@@ -202,74 +199,158 @@ contract Exchange {
             }
 
             bool profit = false;
-            uint256 a = valueOf(1, unscaledDepositsLong[msg.sender].amountBaseUnits, poracle.getAssetPrice(mainnetUSDC));
-            uint256 b = valueOf(1, unscaledDepositsLong[msg.sender].amountBaseUnits, overwrittenPrice);
-            uint256 simpleDelta;
+            uint256 a = valueOf(1, unscaledDepositsLong[msg.sender].amountBase, poracle.getAssetPrice(mainnetUSDC));
+            uint256 b = valueOf(1, unscaledDepositsLong[msg.sender].amountBase, overwrittenPrice);
+            uint256 simpleDeltaDollars;
             if (a > b) {
-                simpleDelta = a - b;
+                simpleDeltaDollars = a - b;
             } else if (a < b) {
-                simpleDelta = b - a;
+                simpleDeltaDollars = b - a;
                 profit = true;
             } else {
                 console.log("unimplemented");
-                simpleDelta = 0;
+                simpleDeltaDollars = 0;
             }
-            // console.log(simpleDelta);
+            // console.log(simpleDeltaDollars);
 
-            uint256 availableCoverage = supplyPoolCoverProportion.num * valueOf(1, queryTokenBalance(), currentPrice) / supplyPoolCoverProportion.denom;
-            // console.log(availableCoverage);
+            Fraction memory coverRate;
+            Fraction memory profitShareRate;
+            if (profitShareToCover.num == 0) {
+                coverRate = Fraction({
+                    num: 5,
+                    denom: 100
+                });
+                profitShareRate = maxProfitShareRate;
+            } else if (profitShareToCover.denom == 0) {
+                profitShareRate = Fraction({
+                    num: 5,
+                    denom: 100
+                });
+                coverRate = maxCoverRate;
+            } else {
+                uint256 availableCoverage = supplyPoolCoverProportion.num * valueOf(1, queryTokenBalance(), currentPrice) / supplyPoolCoverProportion.denom;
+                // console.log(availableCoverage);
 
-            uint256 totalLossInAllOpenPositions = 0;
-            for (
-                uint i = openPositions.iterate_start();
-                openPositions.iterate_valid(i);
-                i = openPositions.iterate_next(i)
-            ) {
-                (, A memory value) = openPositions.iterate_get(i);
-                // reversed from natural way
-                if (value.usdcweiPrice < currentPrice) {
-                    uint256 m = valueOf(1, value.depositAmount, value.usdcweiPrice);
-                    uint256 n = valueOf(1, value.depositAmount, currentPrice);
-                    totalLossInAllOpenPositions += m - n;
+                uint256 totalLossInAllOpenPositions = 0;
+                for (
+                    uint i = openPositions.iterate_start();
+                    openPositions.iterate_valid(i);
+                    i = openPositions.iterate_next(i)
+                ) {
+                    (, A memory value) = openPositions.iterate_get(i);
+                    // reversed from natural way
+                    if (value.usdcweiPrice < currentPrice) {
+                        uint256 m = valueOf(1, value.depositAmount, value.usdcweiPrice);
+                        uint256 n = valueOf(1, value.depositAmount, currentPrice);
+                        totalLossInAllOpenPositions += m - n;
+                    }
                 }
+                // console.log(totalLossInAllOpenPositions);
+
+                coverRate = Fraction({num: availableCoverage, denom: totalLossInAllOpenPositions});
+                if (totalLossInAllOpenPositions < availableCoverage) {
+                    coverRate.num = totalLossInAllOpenPositions;
+                }
+                (uint256 p, uint256 q) = fracMin(coverRate.num, coverRate.denom, maxCoverRate.num, maxCoverRate.denom);
+                coverRate.num = p;
+                coverRate.denom = q;
+                // console.log(coverRate.num, coverRate.denom);
+
+                Fraction memory factor = Fraction({
+                    num: profitShareToCover.denom, 
+                    denom: profitShareToCover.num
+                });
+                (p, q) = fracMul(
+                    factor.num, 
+                    coverRate.num, 
+                    factor.denom, 
+                    coverRate.denom
+                );
+                (a, b) = fracAdd(
+                    p, 
+                    profitShareConstant.num, 
+                    q, 
+                    profitShareConstant.denom
+                ); 
+                Fraction memory reg = Fraction({
+                    num: a, 
+                    denom: b
+                });
+                (uint256 x, uint256 y) = fracMin(
+                    reg.num, 
+                    reg.denom, 
+                    maxProfitShareRate.num, 
+                    maxProfitShareRate.denom
+                );
+                profitShareRate = Fraction({
+                    num: x, denom: y
+                });
+                // console.log(profitShareRate.num, profitShareRate.denom);
+            }     
+
+            currentPastClosesCount += 1;
+            if (profit) {
+                currentProfitShareToCover.num += simpleDeltaDollars;
+            } else {
+                currentProfitShareToCover.denom += simpleDeltaDollars;
             }
-            console.log(totalLossInAllOpenPositions);
-
-            Fraction memory coverRate = Fraction({num: availableCoverage, denom: totalLossInAllOpenPositions});
-            if (totalLossInAllOpenPositions < availableCoverage) {
-                coverRate.num = totalLossInAllOpenPositions;
+            if (currentPastClosesCount == 5) {
+                currentPastClosesCount = 0;
+                // denom could be 0, num zero?
+                profitShareToCover = Fraction({
+                    num: currentProfitShareToCover.num, 
+                    denom: currentProfitShareToCover.denom
+                });
+                currentProfitShareToCover.num = 0;
+                currentProfitShareToCover.denom = 0;
             }
-            (uint256 p, uint256 q) = fracMin(coverRate.num, coverRate.denom, maxCoverRate.num, maxCoverRate.denom);
-            coverRate.num = p;
-            coverRate.denom = q;
-            console.log(coverRate.num, coverRate.denom);
 
-            Fraction memory factor = Fraction({num: profitShareToCover.denom, denom: profitShareToCover.num});
-            Fraction memory reg = Fraction({num: factor.num * coverRate.num + profitShareConstant.num, denom: factor.denom * coverRate.denom + profitShareConstant.denom});
-            (uint256 x, uint256 y) = fracMin(reg.num, reg.denom, maxProfitShareRate.num, maxProfitShareRate.denom);
-            Fraction memory profitShareRate = Fraction({num: x, denom: y});
-
-            
-            // if (profit) {
-            //     currentProfitShareToCover.num += profitShareAmnt;
-            // } else {
-            //     currentProfitShareToCover.denom += lossCoverageAmnt;
-            // }
-            // Exponential.Exp ratio = profitShareToCover;
-            // if (currentPastClosesCount == 5) {
-            //     currentPastClosesCount = 0;
-            //     // denom could be 0
-            //     ratio = Exponential.Exp();
-            // }
+            // approve lending pool to transfer protocol usdc
+            // approve protocol to transfer user usdc
             openPositions.remove(keys[msg.sender]);
             keys[msg.sender] = 0;
+            if (profit) {
+                // apply profit share rate 
+                (uint256 extraDebtDollars_num, uint256 extraDebtDollars_denom) = fracMul(
+                    simpleDeltaDollars, 
+                    1, 
+                    profitShareRate.num, 
+                    profitShareRate.denom
+                ); 
+                Fraction memory extraDebtBase_f = Fraction({
+                    num: extraDebtDollars_num * 1000000, denom: extraDebtDollars_denom
+                });
+                uint256 extraDebtBase = extraDebtBase_f.num / extraDebtBase_f.denom;
+                uint256 finalRepayAmountBase = unscaledBorrowsLong[msg.sender].amountBase + extraDebtBase;
+                // convert usdc to eth and deposit
+                uint256 protocolReceivesAmounrBase = extraDebtBase;
+
+                // console.log(unscaledBorrowsLong[msg.sender].amountBase, "w/ extra debt (share)", finalRepayAmountBase);
+            } else {
+                (uint256 lessDebtDollars_num, uint256 lessDebtDollars_denom) = fracMul(
+                    simpleDeltaDollars, 
+                    1, 
+                    coverRate.num, 
+                    coverRate.denom
+                ); 
+                Fraction memory lessDebtBase_f = Fraction({
+                    num: lessDebtDollars_num * 1000000, denom: lessDebtDollars_denom
+                });
+                uint256 lessDebtBase = lessDebtBase_f.num / lessDebtBase_f.denom;
+                uint256 finalRepayAmountBase = unscaledBorrowsLong[msg.sender].amountBase - lessDebtBase;
+                // convert eth to usdc and pay back
+                uint256 protocolCoverAmountBase = lessDebtBase;
+
+                // console.log(unscaledBorrowsLong[msg.sender].amountBase / 1000000, "w/ less debt (cover)", finalRepayAmountBase / 1000000);
+            }
+            unscaledBorrowsLong[msg.sender].amountBase = 0;
         } else {
             console.log("unimplemented");
         }
     }
 
     /**
-    @dev returns minimum of a Fraction
+    @dev returns minimum of fractions
      */
     function fracMin(uint256 a_num, uint256 a_denom, uint256 b_num, uint256 b_denom) internal pure returns(uint256, uint256) {
         uint256 a_num_prime = a_num * b_denom;
@@ -279,6 +360,22 @@ contract Exchange {
         } else {
             return (b_num, b_denom);
         }
+    }
+
+    /**
+    @dev returns sum of fractions
+     */
+    function fracAdd(uint256 a, uint256 b, uint256 c, uint256 d) internal pure returns (uint256, uint256) {
+        uint256 denom = b * d;
+        uint256 num = (a * d) + (c * b);
+        return (num, denom);
+    }
+
+    /**
+    @dev returns product of fractions
+     */
+    function fracMul(uint256 a, uint256 b, uint256 c, uint256 d) internal pure returns (uint256, uint256) {
+        return (a * c, b * d);
     }
 
     /**

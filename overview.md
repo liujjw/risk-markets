@@ -16,7 +16,7 @@ For example, in a bull market, lenders will buy risk from long risk sellers to g
 
 # Design 
 ## Rates
-Rates are set algorithmically based on supply and demand. The total profit sharing can exceed the the total loss coverage, as in this scenario both parties "win" despite borrowers losing more profits. At any given point there is a historical or current protocol-wide ratio of profit sharing value to loss coverage value, `profitShareToCoverRatio`, which defaults to one in the beginning. Once there is enough data on this, we can caluclate this ratio based on a floating number of past closes, perhaps in sync with the yield calculations.
+Rates are set algorithmically based on supply and demand. The total profit sharing can exceed the the total loss coverage, as in this scenario both parties "win" despite borrowers losing more profits. At any given point there is a historical or current protocol-wide ratio of profit sharing value to loss coverage value, `profitShareToCoverRatio`, which defaults to one in the beginning. Once there is enough data on this, we can caluclate this ratio based on a floating number of past closes, perhaps in sync with the yield calculations. If profitShare is zero, maximize the profit share rate and minimize the cover rate. Similarly for cover. Both cannot be zero.
 
 A fraction of every USD simple profit goes toward increasing the borrower's debt obligation above its initial value to go back to the supply pool. We assume that a borrower makes a simple profit from their position, which we define as the positive difference between the value of a position at some higher price and the value of the position at some lower price, i.e.,
 
@@ -107,5 +107,5 @@ Alternatively, all calculations are done with wei and the base price format from
 # Additional considerations
 The protocol is built using Aave's liquidity markets and as such subject to all its risks and rewards, such as liquidations, yields, and governance changes. The usage of the protocol is virtually identical to using Aave or other money market liquidity protocols, except for the additional volatility of exchanging risk of course. 
 
-Miscellaneous: market manipulation by "whales", pooling leverage for less fees feature, optimize gas usage, more analysis for better rates eg get rid of fixed, change terminology from lending/borrowing to true "risk market", liquidations/penalty
+Miscellaneous: market manipulation by "whales", pooling leverage for less fees feature, optimize gas usage, more analysis for better rates eg get rid of fixed, change terminology from lending/borrowing to true "risk market", liquidations/penalty and spreadsheet modelling 
 

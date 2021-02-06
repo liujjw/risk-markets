@@ -136,7 +136,7 @@ describe('Exchange', () => {
         console.log("expecting about", simpleDeltaEstimate);
     })
 
-    it("Computes reasonable cover rates.", async () => {
+    xit("Computes reasonable cover rates and profit share rates, one position. Repays appropriate borrow amount.", async () => {
         // collective borrowers, borrow at 1384, 692000 value deposit, 100000 borrow
         const factory = await ethers.getContractFactory("Exchange");
         const exchange = await factory.deploy();
@@ -160,12 +160,54 @@ describe('Exchange', () => {
         await exchange2.overridePrice(ethers.BigNumber.from(newPriceUSDCWEI));
 
         // borrower deposit is included in supply pool for coverage 
+        await exchang
         await exchange.repay_USDC_Long_Eth(BigNumber.from("0"), BigNumber.from("1"));
-        // console.log("expecting about 150000 / 192000");
-        
+        console.log("expecting about 150000 / 192000 for cover rate");
     })
 
-    it("Computes reasonable profit share rates.", async () => {
-        // compute a variety
+    
+    xit("Computes reasonable cover and profit share rates, multiple positions.", async () => {
+        // borrower 1, borrow at 1384, 692k value deposit, 300k borrow
+        const factory = await ethers.getContractFactory("Exchange");
+        const exchange = await factory.deploy();
+        let overrides = {
+            value: ethers.utils.parseEther("500") 
+        };
+        await exchange.depositLongEth(overrides);
+        await exchange.borrow_USDC_Long_Eth(ethers.utils.parseUnits("300000", 6));
+        // price drops, 500k value deposit so 192k loss now 
+        let newPriceUSDCWEI = ETHUSDC_to_USDCWEI("1000");
+        await exchange.overridePrice(ethers.BigNumber.from(newPriceUSDCWEI));
+
+        // borrower 2, borrow at 1000, 100k value deposit, 40k borrow
+        const user3Signer = new ethers.Wallet
+        ("0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a", exchange.provider);
+        const exchange3 = exchange.connect(user3Signer);
+        let overrides3 = {
+            value: ethers.utils.parseEther("100") 
+        };
+        await exchange3.depositLongEth(overrides3);
+        await exchange3.borrow_USDC_Long_Eth(ethers.utils.parseUnits("40000", 6));
+        // price drops, 90k value deposit so 10k loss, 900*500 = 450k -> 192+50 = 242k, total 252k
+        newPriceUSDCWEI = ETHUSDC_to_USDCWEI("900");
+        await exchange3.overridePrice(ethers.BigNumber.from(newPriceUSDCWEI));
+
+        // represents collective suppliers, no borrows, 1 mil value
+        const user2Signer = new ethers.Wallet
+        ("0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d", exchange.provider);
+        const exchange2 = exchange.connect(user2Signer);
+        let overrides2 = {
+            value: ethers.utils.parseEther("1000") 
+        };
+        await exchange2.depositLongEth(overrides2);
+
+        // price rises, total loss now just 500*1100=550k -> 692-550=142k
+        newPriceUSDCWEI = ETHUSDC_to_USDCWEI("1100");
+        await exchange2.overridePrice(ethers.BigNumber.from(newPriceUSDCWEI));
+
+        // borrower deposit is included in supply pool for coverage 
+        await exchange.repay_USDC_Long_Eth(BigNumber.from("0"), BigNumber.from("1"));
+        // 1600 eth deposited, 1600*1100*0.1 is 176000 so 176000/142k too high
+        // console.log("expecting 8 / 10 for cover rate");
     })
 });

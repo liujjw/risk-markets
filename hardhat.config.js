@@ -12,7 +12,19 @@ task("accounts", "Prints the list of accounts", async () => {
 });
 
 module.exports = {
-  solidity: "0.6.12",
+  solidity: {
+    compilers: [
+      {
+        version: "0.6.12",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200
+          }
+        }
+      }
+    ]
+  },
   networks: {
     hardhat: {
       forking: {
