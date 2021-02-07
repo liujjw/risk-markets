@@ -10,7 +10,7 @@
                 margin-bottom: 50px;
                 border-radius: 0;
             }
-            .connect-metamask {
+            .connect-metamask-div {
                 margin: 0;
                 position: absolute;
                 left: 47%;
@@ -37,8 +37,28 @@
             </div>
         </nav>
 
-        <div class="connect-metamask"><button>Connect Metamask</button></div>
+        <div class="connect-metamask-div">
+            <button class="connect-metamask">Connect Metamask</button> <br> 
+            <h6> Account: <span class="connected-acc"></span> </h6>
+        </div>
         <br><br><br>
+        <script>
+            const ethereumButton = document.querySelector('.connect-metamask');
+            const connectedAccount = document.querySelector('.connected-acc');
+            
+            const {ethereum} = window;
+            // console.log("metamask detected", Boolean(ethereum && ethereum.isMetaMask));
+
+            ethereumButton.addEventListener('click', async () => {
+                try {
+                    const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+                    const account = accounts[0];
+                    connectedAccount.innerHTML = account;
+                } catch (error) {
+                    console.log(error);
+                }
+            });
+        </script>
 
         <div class="container">    
             <div class="col">
@@ -50,16 +70,23 @@
                             <ul>
                                 <li>Supply APY: loading </li>
                                 <li>Borrow APR: loading </li>
-                                <li>Cover rate: loading </li>
-                                <li>Profit-sharing rate: loading </li>
+                                <li>
+                                    Cover rate: <span class="long-cover-rate">
+                                        loading
+                                    </span> 
+                                </li>
+                                <li>
+                                    Profit-sharing rate: <span class="long-profit-share-rate">
+                                        loading
+                                    </span>  
+                                </li>
                                 <li>Liquidity: loading </li>
                                 <li>Collateralization: loading </li>
                             </ul>
                             <script type="module">
-                                // import ethers from "ethers";
-                                if (typeof window.ethereum !== 'undefined') {
-                                    console.log('MetaMask is installed!');
-                                }
+                                import { ethers } from "https://cdn.ethers.io/lib/ethers-5.0.esm.min.js";
+                                const lpsr = document.querySelector("long-profit-share-rate");
+                                const lcr = document.querySelector("long-cover-rate");
                             </script>
                         </div>
                     </div>

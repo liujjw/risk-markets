@@ -38,7 +38,7 @@ Cover rate `coverRate` is based on the constant product equation:
     
     current usdcwei price p
     set s (mapping) containing struct e of wei deposit amounts b, usdcwei price at borrow time c
-    for all e in s (iterate, but can't alter mapping while doing this ):
+    for all e in s (iterate, but can't alter mapping while doing this):
         totalLoss = 0
         if e.c > p:
             totalLoss += valueOf(e.b, e.c) - valueOf(e.b, p)
@@ -105,7 +105,7 @@ Reverse the calculation to solve for `x` given `k` (`x wei * k  = 10^18 wei`). D
 Alternatively, all calculations are done with wei and the base price format from the price oracle, stored as `price = (1.000000 usdc / x wei)`, so that when `(newPrice * y wei) - (oldPrice * y wei)` gives units in whole `usdc` (using Exponential, need to convert when overriding price, for rates math).
 
 # Additional considerations
-The protocol is built using Aave's liquidity markets and as such subject to all its risks and rewards, such as liquidations, yields, and governance changes. The usage of the protocol is virtually identical to using Aave or other money market liquidity protocols, except for the additional volatility of exchanging risk of course. 
+The protocol is built with Aave's liquidity markets and subject its risks and rewards, such as liquidations, yields, interest, and governance changes. All yields and interest from borrows and lending are maintained.
 
 Miscellaneous: market manipulation by "whales", pooling leverage for less fees feature, optimize gas usage, more analysis for better rates eg get rid of fixed, change terminology from lending/borrowing to true "risk market", liquidations/penalty and spreadsheet modelling 
 

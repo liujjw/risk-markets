@@ -12,6 +12,7 @@
     "ethereum-waffle": "^3.2.2",
     "ethers": "^5.0.26",
     "hardhat": "^2.0.8",
+    "http-server": "^0.12.3",
     "mocha": "^8.2.1"
   },
   "scripts": {

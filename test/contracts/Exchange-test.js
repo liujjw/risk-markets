@@ -1,5 +1,5 @@
 const { expect } = require("chai");
-const { BigNumber } = require("ethers");
+const { BigNumber, Contract } = require("ethers");
 const { ethers } = require("hardhat");
 
 describe('Exchange', () => {
@@ -166,7 +166,7 @@ describe('Exchange', () => {
     })
 
     
-    xit("Computes reasonable cover and profit share rates, multiple positions.", async () => {
+    it("Computes reasonable cover and profit share rates, multiple positions.", async () => {
         // borrower 1, borrow at 1384, 692k value deposit, 300k borrow
         const factory = await ethers.getContractFactory("Exchange");
         const exchange = await factory.deploy();
@@ -206,8 +206,20 @@ describe('Exchange', () => {
         await exchange2.overridePrice(ethers.BigNumber.from(newPriceUSDCWEI));
 
         // borrower deposit is included in supply pool for coverage 
+        // infinite approve of usdc to deployed contract 
+        let infinite = BigNumber.from("0x" + "f".repeat(64));
+        let usdc_abi = [
+            "function approve(address _spender, uint256 _value) public returns (bool success)",
+            "function allowance(address _owner, address _spender) public view returns (uint256 remaining)"
+        ];
+        let usdc = new Contract("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", usdc_abi, exchange.signer);   
+        await usdc.approve(exchange.address, infinite);
+        // console.log(
+        //     (await usdc.allowance(exchange.signer.address, exchange.address)).toString()
+        // );
         await exchange.repay_USDC_Long_Eth(BigNumber.from("0"), BigNumber.from("1"));
         // 1600 eth deposited, 1600*1100*0.1 is 176000 so 176000/142k too high
         // console.log("expecting 8 / 10 for cover rate");
+        // 142k usdc loss, 8 / 10 of that is covered, so only need to repay 28.4k usdc, so user keeps some usdc, and loses some eth that was deposited
     })
 });

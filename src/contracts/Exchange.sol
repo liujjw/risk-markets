@@ -14,6 +14,7 @@ contract Exchange {
     address mainnetLPAddrsProvider = 0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5;
     // address kovanLPAddrsProvider = 0x88757f2f99175387ab4c6a4b3067c77a695b0349;
     address mainnetUSDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+    address mainnetUniswapRouter = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
 
     // TODO liquidation process
     uint256 ltv_out_of_ten = 5;
@@ -60,6 +61,7 @@ contract Exchange {
     PriceOracle poracle;
     Erc20 usdc;
     LendingPool lp;
+    UniswapV2Router02 unirouter;
 
     /**
     @dev inits abstractions of contracts
@@ -73,6 +75,7 @@ contract Exchange {
         aweth = Erc20(mainnetaWETH);
         lp = LendingPool(mainnetAaveLendingPool);
         usdc = Erc20(mainnetUSDC);
+        unirouter = UniswapV2Router02(mainnetUniswapRouter);
 
         pastCloses = 5;
         currentPastClosesCount = 0;
@@ -125,9 +128,13 @@ contract Exchange {
         uint256 msgSenderTotalDepositOwnership = contract_aWETH_Balance * unscaledDepositsLong[msg.sender].amountBase / principalTotalBalanceWei;
 
         if (all == 0) {
-            require(amount <= msgSenderTotalDepositOwnership, "user does not own amount to withdraw");
+            require(
+                amount <= msgSenderTotalDepositOwnership, "user does not own amount to withdraw"
+            );
             uint256 newTotalDepositOwnership = msgSenderTotalDepositOwnership - amount;
-            require(ltv_out_of_ten * valueOf(1, newTotalDepositOwnership, poracle.getAssetPrice(mainnetUSDC)) / 10 >= valueOf(2, unscaledBorrowsLong[msg.sender].amountBase, 1), "withdraw would cause borrow to be greater than max borrow");
+            require(
+                ltv_out_of_ten * valueOf(1, newTotalDepositOwnership, poracle.getAssetPrice(mainnetUSDC)) / 10 >= valueOf(2, unscaledBorrowsLong[msg.sender].amountBase, 1), "withdraw would cause borrow to be greater than max borrow"
+            );
 
             uint256 x = amount * principalTotalBalanceWei / contract_aWETH_Balance;
 
@@ -173,7 +180,13 @@ contract Exchange {
         keys[msg.sender] = keyCounter;
         keyCounter += 1;
 
-        lp.borrow(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48, amount, 2, 0, address(this));
+        lp.borrow(
+            0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48, 
+            amount, 
+            2, 
+            0, 
+            address(this)
+        );
         usdc.transfer(msg.sender, amount);
     }
 
@@ -189,7 +202,6 @@ contract Exchange {
     @param amount amount to repay
     @param all 1 for repay all, ignoring amount
     **/
-    // TODO need to ACUTALLY repay the usdc, and increase or decrease debt obligation accordingly 
     function repay_USDC_Long_Eth(uint256 amount, uint256 all) public {
         if (all == 1) {            
             uint256 currentPrice = poracle.getAssetPrice(mainnetUSDC);
@@ -305,12 +317,11 @@ contract Exchange {
                 currentProfitShareToCover.denom = 0;
             }
 
-            // approve lending pool to transfer protocol usdc
-            // approve protocol to transfer user usdc
+            // emit events and watch for them for the front end for all calculations
+            // there is no debt accrued yet
             openPositions.remove(keys[msg.sender]);
             keys[msg.sender] = 0;
             if (profit) {
-                // apply profit share rate 
                 (uint256 extraDebtDollars_num, uint256 extraDebtDollars_denom) = fracMul(
                     simpleDeltaDollars, 
                     1, 
@@ -320,10 +331,33 @@ contract Exchange {
                 Fraction memory extraDebtBase_f = Fraction({
                     num: extraDebtDollars_num * 1000000, denom: extraDebtDollars_denom
                 });
-                uint256 extraDebtBase = extraDebtBase_f.num / extraDebtBase_f.denom;
-                uint256 finalRepayAmountBase = unscaledBorrowsLong[msg.sender].amountBase + extraDebtBase;
-                // convert usdc to eth and deposit
-                uint256 protocolReceivesAmounrBase = extraDebtBase;
+                uint256 extraDebtBase = 
+                    extraDebtBase_f.num / extraDebtBase_f.denom;
+                uint256 finalRepayAmountBase = 
+                    unscaledBorrowsLong[msg.sender].amountBase + extraDebtBase;
+                uint256 protocolReceivesAmountBase = 
+                    extraDebtBase;
+
+                require(
+                    usdc.transferFrom(msg.sender, address(this), finalRepayAmountBase)
+                );
+
+                usdc.approve(address(lp), unscaledBorrowsLong[msg.sender].amountBase);
+                lp.repay(
+                    0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48,
+                    unscaledBorrowsLong[msg.sender].amountBase,
+                    2,
+                    address(this)
+                );
+                // convert extra debt usdc to eth and deposit, updating ownership accordingly (already get from proportional ownership)
+                // hold a larger amount of usdc before calling the swap, like when there is a a lot withdrawals 
+                // min received for selling usdc, max pay for buy eth, other safety 
+                require(usdc.approve(address(unirouter), protocolReceivesAmountBase), "approve failed");
+                address[] memory path = new address[](2);
+                path[0] = address(usdc);
+                path[1] = unirouter.WETH();
+                uint[] memory amounts = unirouter.swapExactTokensForETH(protocolReceivesAmountBase, 0, path, address(this), block.timestamp);
+                weth.depositETH{value: amounts[1]}(address(this), 0);
 
                 // console.log(unscaledBorrowsLong[msg.sender].amountBase, "w/ extra debt (share)", finalRepayAmountBase);
             } else {
@@ -336,16 +370,63 @@ contract Exchange {
                 Fraction memory lessDebtBase_f = Fraction({
                     num: lessDebtDollars_num * 1000000, denom: lessDebtDollars_denom
                 });
-                uint256 lessDebtBase = lessDebtBase_f.num / lessDebtBase_f.denom;
-                uint256 finalRepayAmountBase = unscaledBorrowsLong[msg.sender].amountBase - lessDebtBase;
-                // convert eth to usdc and pay back
-                uint256 protocolCoverAmountBase = lessDebtBase;
+                uint256 lessDebtBase = 
+                    lessDebtBase_f.num / lessDebtBase_f.denom;
+                uint256 finalRepayAmountBase = 
+                    unscaledBorrowsLong[msg.sender].amountBase - lessDebtBase;
+                uint256 protocolCoverAmountBase = 
+                    lessDebtBase;
 
+                // console.log(usdc.allowance(msg.sender, address(this)));
+                require(
+                    usdc.transferFrom(msg.sender, address(this), finalRepayAmountBase)
+                );
+
+                usdc.approve(address(lp), finalRepayAmountBase + lessDebtBase);
+                lp.repay(
+                    mainnetUSDC,
+                    finalRepayAmountBase,
+                    2,
+                    address(this)
+                );
+
+                // withdraw equivalent amount of eth, swap to usdc lessDebtBase amount, then repay
+                uint256 whole_USDC_WEI_price = poracle.getAssetPrice(mainnetUSDC);
+                uint256 weiAmount = (whole_USDC_WEI_price * lessDebtBase) / 1000000;
+                // console.log(weiAmount / 1000000000000000000);
+                // console.log(
+                //     aweth.balanceOf(address(this)) / 1000000000000000000
+                // );
+                aweth.approve(mainnetWETHGateway, weiAmount);
+                weth.withdrawETH(weiAmount, address(this));
+
+                // TODO wont get exact required usdc amount back needed to fully pay down borrow
+                address[] memory path = new address[](2);
+                path[1] = address(usdc);
+                path[0] = unirouter.WETH();
+                uint[] memory amounts = unirouter.swapExactETHForTokens{value: weiAmount}(0, path, address(this), block.timestamp);
+
+                lp.repay(
+                    0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48,
+                    min(lessDebtBase, amounts[1]),
+                    2,
+                    address(this)
+                );
                 // console.log(unscaledBorrowsLong[msg.sender].amountBase / 1000000, "w/ less debt (cover)", finalRepayAmountBase / 1000000);
             }
             unscaledBorrowsLong[msg.sender].amountBase = 0;
         } else {
             console.log("unimplemented");
+        }
+    }
+
+    receive() external payable {} 
+
+    function min(uint256 a, uint256 b) internal pure returns (uint256) {
+        if (a < b) {
+            return a;
+        } else {
+            return b;
         }
     }
 
@@ -419,6 +500,10 @@ interface Erc20 {
     function transfer(address, uint256) external returns (bool);
 
     function balanceOf(address _owner) external view returns (uint256 balance);
+
+    function transferFrom(address _from, address _to, uint256 _value) external returns (bool success);
+
+    function allowance(address _owner, address _spender) external view returns (uint256 remaining);
 }
 
 interface LendingPool {
@@ -427,6 +512,8 @@ interface LendingPool {
     function withdraw(address asset, uint256 amount, address to) external;
 
     function borrow(address asset, uint256 amount, uint256 interestRateMode, uint16 referralCode, address onBehalfOf) external;
+
+    function repay(address asset, uint256 amount, uint256 rateMode, address onBehalfOf) external;
 }
 
 interface PriceOracle {
@@ -435,6 +522,14 @@ interface PriceOracle {
 
 interface LPAddressesProvider {
     function getPriceOracle() external returns (address);
+}
+
+interface UniswapV2Router02 {
+    function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external returns (uint[] memory amounts);
+
+    function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external payable returns (uint[] memory amounts);
+
+    function WETH() external pure returns (address);
 }
 
 struct A {
