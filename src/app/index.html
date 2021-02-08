@@ -83,11 +83,19 @@
                                 <li>Liquidity: loading </li>
                                 <li>Collateralization: loading </li>
                             </ul>
-                            <script type="module">
+                            <!-- <script type="module">
                                 import { ethers } from "https://cdn.ethers.io/lib/ethers-5.0.esm.min.js";
+                                let address = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+
+                                let abi = [];
+                                let provider = window.ethereum;
+                                console.log(ethers.Provider.isProvider(provider));
+
+                                // let contract = new ethers.Contract(address, abi, provider);
+
                                 const lpsr = document.querySelector("long-profit-share-rate");
                                 const lcr = document.querySelector("long-cover-rate");
-                            </script>
+                            </script> -->
                         </div>
                     </div>
                 </div>
@@ -114,25 +122,81 @@
                     <div class="panel-heading">Open position</div>
                     <div class="panel-body">
                         <div class="open-position">
-                            <form action=""> 
+                            <form action="" class="open-long-form"> 
                                 <label for="position">Position: </label>
                                 <div id="position">
                                     <label for="long">Long</label>
-                                    <input type="radio" id="long" value="long" name="position-op">
+                                    <input type="radio" id="long" value="long" name="positionop">
                                     <label for="short">Short</label>
-                                    <input type="radio" id="short" value="short" name="position-op">
+                                    <input type="radio" id="short" value="short" name="positionop">
                                 </div>
                                 <label for="action">Action: </label>
                                 <div id="action">
                                     <label for="borrow">Borrow</label>
-                                    <input type="radio" id="borrow" value="borrow" name="action-op">
+                                    <input type="radio" id="borrow" value="borrow" name="actionop">
                                     <label for="supply">Supply</label>
-                                    <input type="radio" id="supply" value="supply" name="action-op">
+                                    <input type="radio" id="supply" value="supply" name="actionop">
                                 </div>
                                 <label for="amount">Amount: </label>
                                 <input type="text" name="amount" id="amount">
-                                <input type="submit" value="Send">
+                                <input type="button" value="Send" class="send-long-open">
                             </form>
+                            <script type="module">
+                                import { ethers } from "https://cdn.ethers.io/lib/ethers-5.0.esm.min.js";
+                                let address = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+                                let abi = [
+                                    "function depositLongEth() payable public",
+                                    "function borrow_USDC_Long_Eth(uint256 amount) public",
+                                    "function repay_USDC_Long_Eth(uint256 amount, uint256 all) public",
+                                    "function withdrawLongEth(uint256 amount, uint256 all)"
+                                ];
+                                let provider = new ethers.providers.Web3Provider(window.ethereum);
+                                let signer = provider.getSigner();
+                                let contract = new ethers.Contract(address, abi, signer);
+
+                                const sendLongOpen = document.querySelector(".send-long-open");
+                                sendLongOpen.addEventListener('click', async () => {
+                                    let form = document.querySelector(".open-long-form");
+                                    let position = form.elements.positionop.value;
+                                    let action = form.elements.actionop.value;
+                                    let amount = form.elements.amount.value;
+                                    
+                                    let overrides = {
+                                        value: ethers.utils.parseEther(amount)
+                                    };
+                                    if (position == 'long') {
+                                        if (action == 'supply') {
+                                            await contract.depositLongEth(overrides);
+                                        } else if (action == 'borrow') {
+                                            await contract.borrow_USDC_Long_Eth(ethers.utils.parseUnits(amount, 6));
+                                        }
+                                    }
+                                });
+
+                                const sendLongClose = document.querySelector(".send-long-close");
+                                sendLongClose.addEventListener('click', async () => {
+                                    let form = document.querySelector(".close-long-form");
+                                    let position = form.elements.positioncp.value;
+                                    let action = form.elements.actioncp.value;
+                                    let amount = form.elements.amount.value;
+
+                                    if (position == 'long') {
+                                        if (action == 'pay back all') {
+                                            let infinite = ethers.BigNumber.from("0x" + "f".repeat(64)); 
+                                            let usdc_abi = [
+                                                "function approve(address _spender, uint256 _value) public returns (bool success)",
+                                                "function allowance(address _owner, address _spender) public view returns (uint256 remaining)"
+                                            ];
+                                            let usdc_address = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+                                            let usdc_contract = new ethers.Contract(usdc_address, usdc_abi, signer);
+                                            await usdc_contract.approve(address, infinite);
+                                            await contract.repay_USDC_Long_Eth(ethers.BigNumber.from("0"), ethers.BigNumber.from("1"));
+                                        } else if (action == 'withdraw-all') {
+                                            await contract.withdrawLongEth(ethers.utils.parseEther("0"), ethers.BigNumber.from("1"));
+                                        }
+                                    }
+                                });
+                            </script>
                         </div>
                     </div>
                 </div>
@@ -143,26 +207,26 @@
                     <div class="panel-heading">Close position</div>
                     <div class="panel-body">
                         <div class="close-position">
-                            <form action="">
+                            <form action="" class="close-long-form">
                                 <label for="position">Position: </label>
                                 <div id="position">
                                     <label for="long">Long</label>
-                                    <input type="radio" id="long" value="long" name="position-cp">
+                                    <input type="radio" id="long" value="long" name="positioncp">
                                     <label for="short">Short</label>
-                                    <input type="radio" id="short" value="short" name="position-cp">
+                                    <input type="radio" id="short" value="short" name="positioncp">
                                 </div>
                                 <label for="action">Action: </label>
                                 <div id="action">
-                                    <label for="pay back">Pay back</label>
-                                    <input type="radio" id="pay back" value="pay back" name="action-cp">
+                                    <label for="pay back">Pay back all</label>
+                                    <input type="radio" id="pay back all" value="pay back all" name="actioncp">
                                     <label for="withdraw">Withdraw</label>
-                                    <input type="radio" id="withdraw" value="withdraw" name="action-cp">
+                                    <input type="radio" id="withdraw" value="withdraw" name="actioncp">
                                     <label for="withdraw-all">Withdraw all</label>
-                                    <input type="radio" id="withdraw-all" value="withdraw-all" name="action-cp">
+                                    <input type="radio" id="withdraw-all" value="withdraw-all" name="actioncp">
                                 </div>
                                 <label for="amount">Amount: </label>
                                 <input type="text" name="amount" id="amount">
-                                <input type="submit" value="Send">
+                                <input type="button" value="Send" class="send-long-close">
                             </form>
                         </div>
                     </div>

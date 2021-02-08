@@ -11,6 +11,13 @@ task("accounts", "Prints the list of accounts", async () => {
   }
 });
 
+task("deploy", "deploys the protocol contract", async () => {
+  const factory = await ethers.getContractFactory("Exchange");
+  const exchange = await factory.deploy();
+  // console.log(await exchange.deployTransaction.wait());
+  // 0x5FbDB2315678afecb367f032d93F642f64180aa3
+});
+
 module.exports = {
   solidity: {
     compilers: [

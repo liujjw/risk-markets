@@ -5,4 +5,4 @@ A protocol built on top of Aave v2 that establishes markets for the exchange of 
 Refer to `overview.md` for an in-depth protocol design overview. 
 
 # Usage
-
+Start the forked mainnet chain, deploy the contract, start the server, run the override price script. Remember to reset metamask accounts.

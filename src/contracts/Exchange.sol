@@ -63,6 +63,9 @@ contract Exchange {
     LendingPool lp;
     UniswapV2Router02 unirouter;
 
+    event ProfitShareRateCalculated(uint256 num, uint256 denom);
+    event CoverRateCalculated(uint256 num, uint256 denom);
+
     /**
     @dev inits abstractions of contracts
     **/
@@ -267,6 +270,7 @@ contract Exchange {
                 coverRate.num = p;
                 coverRate.denom = q;
                 // console.log(coverRate.num, coverRate.denom);
+                emit CoverRateCalculated(p, q);
 
                 Fraction memory factor = Fraction({
                     num: profitShareToCover.denom, 
@@ -298,6 +302,7 @@ contract Exchange {
                     num: x, denom: y
                 });
                 // console.log(profitShareRate.num, profitShareRate.denom);
+                emit ProfitShareRateCalculated(x, y);
             }     
 
             currentPastClosesCount += 1;
