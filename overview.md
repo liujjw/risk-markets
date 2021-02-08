@@ -1,6 +1,6 @@
 
 # About
-A protocol built on top of Aave v2 that establishes markets for the exchange of risk, based on pooled collateralization. There is no in-protocol algorithmic underwriting, instead borrowers (sellers) deposit collateral (unnecessary with credit delegation useful for CEXes, Kraken margin trading for example) to borrow an asset from a risk pool, which allows them to decrease their realized risk from some position in exchange for a portion of their realized profits.
+A protocol built on top of Aave v2 that establishes markets for the exchange of risk, based on pooled collateralization. There is no in-protocol algorithmic underwriting, instead borrowers (sellers) deposit collateral (unnecessary with credit delegation useful for CEXes, Kraken margin trading for example) to borrow an asset from a risk pool, which allows them to decrease their realized risk from some position in exchange for a portion of their realized profits. Suppliers (buyers) receive Aave's base APY plus shared profits and losses from sellers. The frontend currently resembles depositing and borrowing on Aave.
 
 ## Risk pools
 Lenders (buyers) deposit assets into risk pools, of which there are two categories: long and short. Risk pools are deposited into Aave for passive yield. However, yield from risk pools has increased volatility due to the borrower and lender obligations.
