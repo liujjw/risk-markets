@@ -5,10 +5,10 @@ import "hardhat/console.sol";
 // import "./Exponential.sol";
 
 contract Exchange {
-    address kovanAaveLendingPool = 0x9FE532197ad76c5a68961439604C037EB79681F0;
+    // address kovanAaveLendingPool = 0x9FE532197ad76c5a68961439604C037EB79681F0;
     address mainnetAaveLendingPool = 0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9;
     address mainnetWETHGateway = 0xDcD33426BA191383f1c9B431A342498fdac73488;
-    address kovanWETHGateway = 0xf8aC10E65F2073460aAD5f28E1EABE807DC287CF;
+    // address kovanWETHGateway = 0xf8aC10E65F2073460aAD5f28E1EABE807DC287CF;
     address mainnetaWETH = 0x030bA81f1c18d280636F32af80b9AAd02Cf0854e;
     // TODO fetching addresses
     address mainnetLPAddrsProvider = 0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5;

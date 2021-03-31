@@ -107,5 +107,5 @@ Alternatively, all calculations are done with wei and the base price format from
 # Additional considerations
 The protocol is built with Aave's liquidity markets and subject its risks and rewards, such as liquidations, yields, interest, and governance changes. All yields and interest from borrows and lending are maintained.
 
-Miscellaneous: market manipulation by "whales", pooling leverage for less fees feature, optimize gas usage, more analysis for better rates eg get rid of fixed, change terminology from lending/borrowing to true "risk market", liquidations/penalty and spreadsheet modelling 
+Miscellaneous: market manipulation by "whales", pooling leverage for less fees feature, optimize gas usage, more analysis for better rates eg get rid of fixed, change terminology from lending/borrowing to true "risk market", composability, "pieces", project funding, liquidations/penalty and spreadsheet modelling 
 
