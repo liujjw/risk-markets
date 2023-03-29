@@ -1,0 +1,12 @@
+type EthereumAccount @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  public_key: String
+  userID: ID! @index(name: "byUser")
+}
+
+type User @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  username: String
+  password: String
+  EthereumAccounts: [EthereumAccount] @hasMany(indexName: "byUser", fields: ["id"])
+}

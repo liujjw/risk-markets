@@ -1,31 +1,54 @@
 {
-  "name": "risk-markets",
-  "version": "1.0.0",
-  "description": "Risk markets protocol.",
-  "main": "index.js",
-  "dependencies": {},
-  "devDependencies": {
-    "@nomiclabs/hardhat-ethers": "^2.0.1",
-    "@nomiclabs/hardhat-waffle": "^2.0.1",
-    "@openzeppelin/contracts": "^3.3.0",
-    "chai": "^4.2.0",
-    "ethereum-waffle": "^3.2.2",
-    "ethers": "^5.0.26",
-    "hardhat": "^2.0.8",
-    "http-server": "^0.12.3",
-    "mocha": "^8.2.1"
-  },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/liujjw/risk-markets.git"
-  },
-  "author": "Jackie Liu",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/liujjw/risk-markets/issues"
-  },
-  "homepage": "https://github.com/liujjw/risk-markets#readme"
+    "name": "risk-markets",
+    "version": "1.0.0",
+    "description": "Risk markets protocol.",
+    "main": "index.js",
+    "dependencies": {
+        "@aws-amplify/ui-react": "^4.4.1",
+        "@types/node": "18.15.10",
+        "@types/react": "18.0.30",
+        "@types/react-dom": "18.0.11",
+        "aws-amplify": "^5.0.22",
+        "eslint": "8.36.0",
+        "eslint-config-next": "13.2.4",
+        "ethers": "^5.0.26",
+        "lodash.debounce": "^4.0.8",
+        "lodash.kebabcase": "^4.1.1",
+        "react": "18.2.0",
+        "react-dom": "18.2.0",
+        "react-hook-form": "^6.14.2",
+        "react-hot-toast": "^1.0.2",
+        "react-markdown": "^5.0.3",
+        "typescript": "5.0.2"
+    },
+    "devDependencies": {
+        "@nomiclabs/hardhat-ethers": "^2.0.1",
+        "@nomiclabs/hardhat-waffle": "^2.0.1",
+        "@openzeppelin/contracts": "^3.3.0",
+        "chai": "^4.2.0",
+        "ethereum-waffle": "^4.0.10",
+        "hardhat": "^2.0.8",
+        "ini": "^1.3.5",
+        "inquirer": "^6.5.1",
+        "mocha": "^10.2.0"
+    },
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "amplify-modelgen": "node amplify/scripts/amplify-modelgen.js",
+        "amplify-push": "node amplify/scripts/amplify-push.js",
+        "dev": "next dev",
+        "build": "next build",
+        "start": "next start",
+        "lint": "next lint"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/liujjw/risk-markets.git"
+    },
+    "author": "Jackie Liu",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/liujjw/risk-markets/issues"
+    },
+    "homepage": "https://github.com/liujjw/risk-markets#readme"
 }

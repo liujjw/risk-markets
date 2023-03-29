@@ -1,0 +1,15 @@
+{
+  "staging": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-riskmarkets-staging-160036-authRole",
+      "UnauthRoleArn": "arn:aws:iam::555557094185:role/amplify-riskmarkets-staging-160036-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::555557094185:role/amplify-riskmarkets-staging-160036-authRole",
+      "Region": "us-east-1",
+      "DeploymentBucketName": "amplify-riskmarkets-staging-160036-deployment",
+      "UnauthRoleName": "amplify-riskmarkets-staging-160036-unauthRole",
+      "StackName": "amplify-riskmarkets-staging-160036",
+      "StackId": "arn:aws:cloudformation:us-east-1:555557094185:stack/amplify-riskmarkets-staging-160036/add58400-cd81-11ed-928e-0edd1068f1e5",
+      "AmplifyAppId": "d2n5tlg9sgjkeb"
+    }
+  }
+}
